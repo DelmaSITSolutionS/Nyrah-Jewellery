@@ -1,0 +1,102 @@
+.login-container {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    padding: 60px;
+    border: 1px solid #ddd;
+    position: relative;
+    background: white;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.login-container h2 {
+    font-size: 40px;
+    text-align: center;
+    color: #443627;
+    margin-bottom: 20px;
+    font-weight: 300;
+}
+
+form label {
+    display: block;
+    margin-bottom: 10px;
+    font-family: "Poppins",sans-serif;
+    color: #443627;
+    font-size: .8rem;
+    letter-spacing: 1px;
+    font-weight: 300;
+    padding-top: 10px;
+}
+
+form label span {
+    color: red;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    border: 1px solid #ccc;
+}
+
+.password-field {
+    position: relative;
+}
+
+.eye-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #777;
+}
+
+.forgot-text a{
+    font-size: .7rem;
+    color: #C19A6B;
+    text-decoration: none;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    letter-spacing: .5px;
+    font-family: "Poppins",sans-serif;
+}
+
+.login-btn {
+    width: 100%;
+    font-size: 15px;
+    background: #000000;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #ffffff;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-weight: 400;
+    font-family: "Poppins",sans-serif;
+}
+
+
+
+
+/* mobile view  */
+
+@media (max-width:425px){
+    .login-container{
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}

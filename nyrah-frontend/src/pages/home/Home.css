@@ -1,0 +1,738 @@
+/* carousel section  */
+
+.carousel-sections .mySwiper {
+    height: 80vh;
+}
+
+.carousel-sections .mySwiper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carousel-sections .mySwiper .carousel-text {
+    position: absolute;
+    top: 70%;
+    left: 3rem;
+    height: 100%;
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+    width: 40%;
+}
+
+.carousel-sections .mySwiper .carousel-text p {
+    color: 443627;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    color: #ffffff;
+    word-spacing: 1px;
+    font-weight: 300;
+    font-family: "Poppins", sans-serif;
+    text-transform: uppercase;
+}
+
+.carousel-sections .mySwiper .carousel-text a {
+    position: relative;
+    border: 1px solid #c9c9c9;
+    padding: .5rem;
+    letter-spacing: 1px;
+    font-size: .9rem;
+    width: fit-content;
+    text-decoration: none;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Poppins", sans-serif;
+    gap: 8px;
+    font-weight: 200;
+}
+
+.carousel-sections .mySwiper .carousel-text a::after {
+    content: " ";
+    background-color: rgba(161, 161, 161, 0.153);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    transition: all ease-in-out .2s;
+}
+
+.carousel-sections .mySwiper .carousel-text a:hover::after {
+    width: 100%;
+}
+
+
+
+
+
+
+/* textline part  */
+
+.textline-part {
+    height: 100%;
+    width: 100%;
+    padding: 3rem;
+    background-color: #FDF6F0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.first-textline {
+    color: #aa8458;
+    font-size: 2.3rem;
+    text-align: center;
+    font-family: "WindSong", cursive;
+    font-weight: 50;
+    font-style: normal;
+}
+
+.seco-textline {
+    color: rgb(85, 85, 85);
+    font-size: .9rem;
+    text-align: center;
+    width: 100%;
+    font-family: "Poppins", sans-serif;
+    font-optical-sizing: auto;
+    letter-spacing: 1px;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.third-textline {
+    color: rgb(85, 85, 85);
+    font-size: .9rem;
+    text-align: center;
+    font-family: "Poppins", sans-serif;
+    letter-spacing: 1px;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+
+/* Trendy section  */
+.trendy-part {
+    width: 100%;
+    padding: 3rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.first-box {
+    height: 100%;
+}
+
+.trendy-part .t-big-text {
+    color: #584938;
+    font-size: 3rem;
+    font-weight: 100;
+    letter-spacing: 3px;
+    font-family: "Noto Serif Display", serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.trendy-part .t-small-text {
+    display: flex;
+    align-items: center;
+    padding-top: 15px;
+}
+
+.trendy-part .t-small-text a {
+    color: #584938;
+    font-size: 1.1rem;
+    margin: 0;
+    letter-spacing: 2px;
+    text-decoration: none;
+    font-family: "Poppins", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all ease-in-out .3s;
+}
+
+.trendy-part .t-small-text a:hover {
+    opacity: 70%;
+
+}
+
+.trendy-part .t-small-text a:hover svg {
+    transform: translateX(5px);
+    transition: all ease-in-out .3s;
+}
+
+
+
+
+.second-box {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.second-inner {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card {
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-img {
+    height: 300px;
+    width: 300px;
+    object-fit: cover;
+}
+
+
+.card h2 {
+    color: rgb(85, 85, 85);
+    margin-top: 15px;
+    font-size: 1.2rem;
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 200;
+    font-style: normal;
+    text-align: center;
+}
+
+.card p {
+    color: rgb(85, 85, 85);
+    font-weight: 700;
+    font-size: .9rem;
+    text-align: center;
+    margin-top: 12px;
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+
+/* home-banners Part */
+.offer-swiper .swiper .swiper-pagination-bullet-active {
+    background-color: black;
+}
+
+.home-banner-part {
+    width: 100%;
+    padding: 0rem 3rem;
+}
+
+
+.offer-card {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.offer-img {
+    object-fit: cover;
+    background-size: cover;
+    transition: all ease .4s;
+}
+
+.offer-img:hover {
+    transform: scale(1.2);
+}
+
+
+
+/* our-stack-section */
+
+.our-stacks-section {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 4rem 0rem;
+}
+
+.img-container {
+    height: auto;
+    width: 50%;
+}
+
+.trendy-swiper-off {
+    display: none;
+}
+
+
+/* stacks scroll */
+.stacks-img {
+    position: sticky;
+    top: 7rem;
+    width: 100%;
+    background-size: cover;
+}
+
+/* stacks scoll */
+.stacks-scroll,
+.insta-scroll {
+    width: 50%;
+    height: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+}
+
+.img-container button {
+    position: absolute;
+    left: 2rem;
+    bottom: 2rem;
+    padding: .7rem;
+    border: 1px solid white;
+    background: transparent;
+    color: white;
+    z-index: 12;
+    display: none;
+}
+
+
+.stacks-scroll h1 {
+    position: absolute;
+    width: 20%;
+    top: 20%;
+    font-size: 3.5vw;
+    left: -10%;
+    color: #443627;
+    font-weight: 300;
+    font-family: "Noto Serif Display", serif;
+}
+
+.insta-scroll h1 {
+    position: absolute;
+    width: 20%;
+    top: 20%;
+    font-size: 3.5vw;
+    right: -10%;
+    color: #443627;
+    z-index: 10;
+    font-weight: 300;
+    font-family: "Noto Serif Display", serif;
+}
+
+.big-card {
+    width: 25vw;
+    height: auto;
+    text-wrap: nowrap;
+    overflow: hidden;
+}
+
+.big-card img {
+    width: 100%;
+    height: 25vw;
+    object-fit: cover;
+}
+
+/* sparkle-section  */
+
+.sparkle-session {
+    width: 100%;
+    padding: 0rem 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sparkle-text {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+}
+
+.sparkle-text p {
+    color: #6b5642;
+    font-size: 3rem;
+    text-align: center;
+    letter-spacing: 2px;
+    text-wrap: nowrap;
+    font-family: "Noto Serif Display", serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.sparkle-elements {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.sparkle-elements ul {
+    font-size: .85rem;
+    list-style: none;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 1.5vw;
+    letter-spacing: 1.5px;
+    font-family: "Poppins", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.sparkle-elements button {
+    text-decoration: none;
+    padding: 5px;
+    color: #6b5642;
+    display: inline-block;
+    position: relative;
+    text-wrap: nowrap;
+    font-family: "Poppins", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    cursor: pointer;
+}
+
+.sparkle-elements button::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 1px;
+    bottom: 0;
+    left: 0;
+    background-color: #6b5642;
+    transition: transform 0.15s ease-out;
+}
+
+.sparkle-elements button:hover::after {
+    transform: scaleX(1);
+}
+
+#sparkle-cat{
+    padding: .5rem .7rem;
+    text-transform: uppercase;
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+    outline: none;
+    border: none;
+    display: none;
+}
+
+/* Second Part */
+
+.sparkle-card-sec {
+    padding: 3rem;
+    height: 100%;
+    width: 100%;
+    
+}
+
+.sparkle-card {
+    overflow: hidden;
+    height: 100%;
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.sparkle-card h2 {
+    color: rgb(85, 85, 85);
+    margin-top: 15px;
+
+    font-family: "Quicksand", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 392;
+    font-style: normal;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.sparkle-card p {
+    color: rgb(85, 85, 85);
+    font-weight: 700;
+    font-size: .9rem;
+    text-align: center;
+    margin-top: 18px;
+    font-family: "Quicksand", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 640;
+    font-style: normal;
+}
+
+.sparkle-img {
+    width: 250px;
+    height: 250px;
+    background-size: cover;
+    object-fit: cover;
+}
+
+/* Third Part */
+
+.review-section {
+    width: 100%;
+    padding: 3rem;
+    background: linear-gradient(to right,
+            rgb(255, 255, 255, 0.5),
+            rgba(255, 255, 255, 0.5)), url("../../assets/banners/review-banner.jpg");
+    background-size: cover;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.review-section .swiper-pagination-bullet-active {
+    background-color: black;
+}
+
+
+.review-card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    max-height: 400px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+}
+
+.review-card h2 {
+    font-size:1.1rem;
+    font-weight: bold;
+    color: #333;
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.review {
+    font-size: .9rem;
+    color: #666;
+    text-align: justify;
+    line-height: 1.6;
+    font-family: "Roboto", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.reviewer-stars {
+    display: flex;
+    flex-direction: column;
+}
+
+.reviewer strong{
+    color: #000;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: "Noto serif display", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.stars span {
+    font-size: 30px;
+    color: orange;
+    margin: 0 1px;
+    cursor: pointer;
+}
+
+
+
+
+
+/* mobile view  */
+@media (max-width:1024px) {
+
+
+    .trendy-part {
+        flex-direction: column;
+    }
+
+    .stacks-img {
+        top: 4rem;
+    }
+
+    
+    .review-card {
+        height: 100%;
+    }
+}
+
+
+@media (max-width:768px) {
+    .carousel-sections .mySwiper .carousel-text {
+        width: 100%;
+        top: 70%;
+
+        left: 0;
+        padding: 1rem 3rem;
+    }
+
+    .carousel-sections .mySwiper .carousel-text p{
+        font-size: 1rem;
+    }
+
+    .offer-swiper .swiper {
+        display: block;
+    }
+
+    .offer-card {
+        width: 100%;
+        height: 100%;
+    }
+
+    .stacks-scroll,
+    .insta-scroll {
+        display: none;
+    }
+
+    .our-stacks-section {
+        padding: 3rem;
+    }
+
+    .stacks-img {
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .img-container {
+        position: relative;
+        height: 100%;
+        width: 100%;
+    }
+
+    .img-container button {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-family: "Roboto", sans-serif;
+        font-weight: 200;
+    }
+
+    .img-container::before {
+        content: " ";
+        background-color: #000;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 11;
+        opacity: .3;
+    }
+
+    .trendy-swiper-on {
+        position: fixed;
+        z-index: 13;
+        width: 100%;
+        height: auto;
+        bottom: 0;
+        left: 0;
+        background: white;
+        border-top-left-radius: 2rem;
+        border-top-right-radius: 2rem;
+        padding: 3rem;
+    }
+    .sparkle-text p{
+        font-size: 2rem;
+    }
+    .sparkle-elements{
+        display: none;
+    }
+    #sparkle-cat{
+        display: block;
+    }
+}
+
+
+
+@media (max-width:425px) {
+    .carousel-sections .mySwiper .carousel-text {
+        padding: 1rem;
+    }
+    .carousel-sections .mySwiper .carousel-text p{
+        font-size: 1rem;
+    }
+    .carousel-sections .mySwiper .carousel-text a{
+        padding: 8px;
+    }
+
+    .textline-part {
+        padding: 3rem 1rem;
+    }
+
+    .first-textline {
+        font-size: 7vw;
+    }
+
+    .seco-textline,
+    .third-textline {
+        font-size: .7rem;
+    }
+
+    .trendy-part {
+        padding: 3rem 1rem;
+    }
+
+    .trendy-part .t-big-text {
+        font-size: 2rem;
+    }
+
+    .home-banner-part {
+        padding: 1rem;
+    }
+
+    .offer-card {
+        height: 90vw;
+        width: 90vw;
+    }
+
+    .our-stacks-section {
+        padding: 2rem 1rem;
+    }
+    .trendy-swiper-on{
+        padding: 2.3rem;
+    }
+    .review-section,.sparkle-session,.sparkle-card-sec{
+        padding: 2rem 1rem;
+    }
+    .sparkle-text p{
+        font-size: 2rem;
+        text-wrap: wrap;
+    }
+}

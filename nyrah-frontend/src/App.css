@@ -1,0 +1,33 @@
+/* *{
+  padding: 0%;
+  margin: 0%;
+  box-sizing: border-box;
+} */
+
+.visible{
+  display:block;
+}
+
+.hidden{
+  display: none;
+}
+
+/* custom-scroll.css or global.css */
+/* scrollbar styles */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
