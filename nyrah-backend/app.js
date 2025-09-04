@@ -28,6 +28,7 @@ const materialMenuRoute = require("./router/materialMenuRouter")
 const ratingRoute = require("./router/ratingRouter")
 const instaPostRoute = require("./router/instaPostRouter")
 const discountBannerRoute = require("./router/discountBannerRouter")
+const customizationRoute = require("./router/customizationRouter")
 
 
 app.use("/api/v1",userRoute)
@@ -43,8 +44,7 @@ app.use("/api/v1",materialMenuRoute)
 app.use("/api/v1",ratingRoute)
 app.use("/api/v1",instaPostRoute)
 app.use("/api/v1",discountBannerRoute)
-
-
+app.use("/api/v1",customizationRoute)
 
 // error 
 app.use(errorMiddleware)

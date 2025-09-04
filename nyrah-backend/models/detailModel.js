@@ -58,24 +58,19 @@ const BraceletSchema = new mongoose.Schema({
     type: [String], // e.g., ["6.0\"", "6.5\"", "Adjustable"]
     required: false, // Now optional
   },
-  metalPurity: [{ type: String, required: true }],
+  metalPurity: { type: [String], required: true },
   metalTone: {
     type: String,
     required: false, // Optional
   },
 
-  gemstoneOption: [
-    {
-      value: { type: String, required: false }, // e.g., "2.5 ct"
-      price: { type: Number, default: 0 }, // additional price (optional)
-    },
-  ],
+  stoneType: { type: [String], required: true },
 
   customization: {
     nameEngravingAvailable: { type: Boolean, default: false },
-    sizeCustomizable: { type: Boolean, default: false },
-    metalCustomizable: { type: Boolean, default: false },
-    gemstoneCustomizable: { type: Boolean, default: false },
+    // sizeCustomizable: { type: Boolean, default: false },
+    // metalCustomizable: { type: Boolean, default: false },
+    // gemstoneCustomizable: { type: Boolean, default: false },
   },
 
   certification: {
@@ -91,12 +86,7 @@ const BraceletSchema = new mongoose.Schema({
     type: String, // Optional, e.g., "12.5g approx."
   },
 
-  finish: [
-    {
-      value: { type: String, required: false }, // e.g., "2.5 ct"
-      price: { type: Number, default: 0 }, // additional price (optional)
-    },
-  ],
+  finish: { type: String, require: false },
 
   careInstructions: {
     type: String,
@@ -116,32 +106,23 @@ const BraceletSchema = new mongoose.Schema({
 
 //Necklace Schema
 const NecklaceSchema = new mongoose.Schema({
-  sizes: [
-    {
-      value: { type: String, required: true }, // e.g., "16\" + 2\" extender"
-      price: { type: Number, default: 0 }, // additional cost if needed
-    },
-  ],
-  chainLengths: [
-    {
-      value: { type: String, required: true }, // e.g., "16", "18"
-      price: { type: Number, default: 0 },
-    },
-  ],
+  sizes: {
+    type: [String], // e.g., ["6.0\"", "6.5\"", "Adjustable"]
+    required: false, // Now optional
+  },
+  chainLengths: {
+    type: [String], // e.g., ["6.0\"", "6.5\"", "Adjustable"]
+    required: false, // Now optional
+  },
 
-  metalPurity: [{ type: String, required: true }],
+  metalPurity: { type: [String], required: true },
 
   metalTone: {
     type: String,
     required: false,
   },
 
-  stoneType: [
-    {
-      value: { type: String, required: false }, // e.g., "VVS1 Lab-Grown"
-      price: { type: Number, default: 0 }, // optional
-    },
-  ],
+ stoneType: { type: [String], required: true },
 
   certification: {
     isCertified: { type: Boolean, default: false },
@@ -157,12 +138,7 @@ const NecklaceSchema = new mongoose.Schema({
     required: false,
   },
 
-  finish: [
-    {
-      value: { type: String, required: true }, // e.g., "Glossy"
-      price: { type: Number, default: 0 },
-    },
-  ],
+  finish: { type: String, require: false },
 
   shippingNote: {
     type: String,
@@ -177,51 +153,29 @@ const NecklaceSchema = new mongoose.Schema({
 
 // earring schema
 const EarringSchema = new mongoose.Schema({
-  metalPurity: [{ type: String, required: true }],
+  metalPurity: { type: [String], required: true },
   metalTone: {
     type: String,
     required: false,
   },
-  stoneType: [
-    {
-      value: { type: String, required: false }, // e.g., "VVS1 Lab-Grown"
-      price: { type: Number, default: 0 }, // optional
-    },
-  ],
-  stoneCarat: [
-    {
-      value: { type: String, required: false }, // e.g., "0.4ct"
-      price: { type: Number, default: 0 }, // optional
-    },
-  ],
-  earringSize: [
-    {
-      value: { type: String, required: false }, // e.g., "8mm"
-      price: { type: Number, default: 0 }, // optional
-    },
-  ],
+  stoneType: { type: [String], required: true },
+  stoneCarat: { type: String, require: false },
+  earringSize: {
+    type: [String], // e.g., ["6.0\"", "6.5\"", "Adjustable"]
+    required: false, // Now optional
+  },
   weight: {
     type: String, // e.g., "6g", "9g"
     required: false,
   },
-  backType: [
-    {
-      value: { type: String, required: false }, // e.g., "Push back"
-      price: { type: Number, default: 0 }, // optional
-    },
-  ],
+  backType: { type: String, require: false },
   customization: {
-    toneCustomizable: { type: Boolean, default: false },
-    stoneCustomizable: { type: Boolean, default: false },
+    // toneCustomizable: { type: Boolean, default: false },
+    // stoneCustomizable: { type: Boolean, default: false },
     engravingAvailable: { type: Boolean, default: false },
-    lengthCustomizable: { type: Boolean, default: false },
+    // lengthCustomizable: { type: Boolean, default: false },
   },
-  finish: [
-    {
-      value: { type: String, required: false }, // e.g., "Glossy"
-      price: { type: Number, default: 0 }, // optional
-    },
-  ],
+  finish: { type: String, require: false },
   hypoallergenic: {
     type: Boolean,
     default: false,
@@ -260,38 +214,24 @@ const PendantSchema = new mongoose.Schema({
     default: false,
   },
 
-  chainLength: [
-    {
-      value: { type: String },
-      price: { type: Number, default: 0 },
-    },
-  ],
+  chainLength: {
+    type: [String], // e.g., ["6.0\"", "6.5\"", "Adjustable"]
+    required: false, // Now optional
+  },
 
-  metalPurity: [{ type: String, required: true }],
+  metalPurity: { type: [String], required: true },
   metalTone: {
     type: String,
   },
 
-  stoneType: [
-    {
-      value: { type: String },
-      price: { type: Number, default: 0 },
-    },
-  ],
+ stoneType: { type: [String], required: true },
 
-  stoneCarat: [
-    {
-      value: { type: String },
-      price: { type: Number, default: 0 },
-    },
-  ],
+  stoneCarat: { type: String, require: false },
 
-  pendantSize: [
-    {
-      value: { type: String },
-      price: { type: Number, default: 0 },
-    },
-  ],
+  pendantSize: {
+    type: [String], // e.g., ["6.0\"", "6.5\"", "Adjustable"]
+    required: false, // Now optional
+  },
 
   weight: {
     type: String, // e.g., "5g", "8g"
@@ -299,16 +239,11 @@ const PendantSchema = new mongoose.Schema({
 
   customization: {
     engravingAvailable: { type: Boolean, default: false },
-    stoneCustomizable: { type: Boolean, default: false },
-    chainCustomizable: { type: Boolean, default: false },
+    // stoneCustomizable: { type: Boolean, default: false },
+    // chainCustomizable: { type: Boolean, default: false },
   },
 
-  finish: [
-    {
-      value: { type: String }, // e.g., "Glossy"
-      price: { type: Number, default: 0 },
-    },
-  ],
+  finish: { type: String, require: false },
 
   hypoallergenic: {
     type: Boolean,

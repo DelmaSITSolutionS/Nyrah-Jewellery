@@ -18,33 +18,35 @@ const calculateFinalPrice = async ({
   let finalPrice = product.price;
   let customizationPrice = 0;
 
-  const centerKeys = ["carats", "shapes", "qualities"];
+  // const centerKeys = ["carats", "shapes", "qualities"];
 
   for (const key of Object.keys(customizations)) {
-    const { value } = customizations[key] || {};
-
+    const { price } = customizations[key] || {};
+    if(price===undefined) continue;
     // 🔹 For RING → look into centerStoneOptions
-    if (
-      detailsModel === "Ring" &&
-      centerKeys.includes(key) &&
-      details.centerStoneOptions?.[key]
-    ) {
-      const match = details.centerStoneOptions[key].find(
-        (opt) => opt.value === value
-      );
-      if (match?.price) customizationPrice += match.price;
-      continue;
-    }
+    // if (
+    //   detailsModel === "Ring" &&
+    //   centerKeys.includes(key) &&
+    //   details.centerStoneOptions?.[key]
+    // ) {
+    //   const match = details.centerStoneOptions[key].find(
+    //     (opt) => opt.value === value
+    //   );
+    //   if (match?.price) customizationPrice += match.price;
+    //   continue;
+    // }
 
     // 🔹 For other models → flat array fields like sizeOptions, etc.
-    if (Array.isArray(details[key])) {
-      const match = details[key].find((opt) => opt.value === value);
-      if (match?.price) customizationPrice += match.price;
-    }
+    // if (Array.isArray(details[key])) {
+    //   const match = details[key].find((opt) => opt.value === value);
+    //   if (match?.price) customizationPrice += match.price;
+    // }
+
+
+    customizationPrice += price;
   }
 
-  finalPrice += customizationPrice;
-  return { finalPrice, customizationPrice };
+  return { finalPrice,customizationPrice };
 };
 
 module.exports = { calculateFinalPrice };

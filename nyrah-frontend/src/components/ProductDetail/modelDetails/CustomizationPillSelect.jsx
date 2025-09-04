@@ -28,7 +28,7 @@ const CustomizationPillSelect = ({
               key={i}
               type="button"
               className={`border cursor-pointer  flex items-center justify-center select-none transition-all duration-400 ease-in-out
-                ${size ? "w-12 h-12 rounded-full font-poppins font-[400] text-[.7rem]" : "px-3 py-2 rounded-none"}
+                ${size ? "w-12 h-12 rounded-full font-poppins font-[400] text-[.65rem]" : "px-3 py-2 rounded-none"}
                 ${isSelected ? "border-black  bg-black text-white" : "border-gray-300  hover:border-gray-600"}
               `}
               onClick={() => {
@@ -45,7 +45,6 @@ const CustomizationPillSelect = ({
               ) : (
                 <>
                   {optValue}
-                  {price && optPrice > 0 ? ` (+₹${optPrice})` : ""}
                 </>
               )}
             </button>

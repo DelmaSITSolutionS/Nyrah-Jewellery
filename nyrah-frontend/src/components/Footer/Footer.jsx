@@ -1,12 +1,14 @@
 import React from "react";
 import "./Footer.css";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 function Footer() {
+  const { categories } = useSelector((state) => state.category);
   return (
     <footer className="footer">
       <div className="footer-container">
-        <div className="footer-column">
+        {/* <div className="footer-column">
           <h3>SHOP</h3>
           <ul>
             <li>
@@ -28,7 +30,7 @@ function Footer() {
               <Link to="">Loose Diamond</Link>
             </li>
           </ul>
-        </div>
+        </div> */}
         <div className="footer-column">
           <h3>POLICIES</h3>
           <ul>
@@ -49,6 +51,17 @@ function Footer() {
             </li>
           </ul>
         </div>
+        <div className="footer-column">
+          <h3>CATEGORIES</h3>
+          <ul>
+            {categories.map((category, i) => (
+              <li key={i} >
+                <Link to={`/product/${category?.main}`}>{category?.main}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className="footer-column">
           <h3>WHY NYRAH</h3>
           <ul>
@@ -81,12 +94,12 @@ function Footer() {
             <li>
               <i className="fas fa-location-dot"></i> Surat, India
             </li>
+              <li>
+              JANKRISHNA DIAMONDS
+            </li>
           </ul>
-          {/* https://www.instagram.com/nyrahjewelry?igsh=b29pbG10bjFhOGIy */}
-          {/* https://www.facebook.com/share/16VQe1nbEx/?mibextid=wwXIfr */}
-          {/* https://maps.app.goo.gl/URrj2CgWj7LM9opY7 */}
           <div className="social-icons flex">
-            <Link to={"/"} target="_blank">
+            <Link to={"https://www.instagram.com/nyrahjewelry?igsh=b29pbG10bjFhOGIy"} target="_blank">
               <svg
                 width="22"
                 height="22"
@@ -112,7 +125,7 @@ function Footer() {
                 />
               </svg>
             </Link>
-            <Link to={"/"} target="_blank">
+            <Link to={"https://www.facebook.com/share/16VQe1nbEx/?mibextid=wwXIfr"} target="_blank">
               <svg
                 width="22"
                 height="22"
@@ -130,7 +143,7 @@ function Footer() {
                 />
               </svg>
             </Link>
-            <Link to={"/"} target="_blank">
+            <Link to={"https://maps.app.goo.gl/URrj2CgWj7LM9opY7"} target="_blank">
               <svg
                 width="22"
                 height="22"

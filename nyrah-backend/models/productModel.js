@@ -51,10 +51,6 @@ const ProductSchema = new mongoose.Schema({
     },
   },
 
-  moreDetail: {
-    type: String,
-  },
-
   rating: {
     type: Number,
     default: 0,

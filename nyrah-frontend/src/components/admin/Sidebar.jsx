@@ -4,6 +4,7 @@ import {
   MdOutlineFeaturedPlayList,
   MdAdminPanelSettings,
   MdAttachMoney,
+  MdOutlineDashboardCustomize
 } from "react-icons/md";
 import { CiInstagram, CiDiscount1 } from "react-icons/ci";
 import { AiOutlineProduct, AiOutlineTags } from "react-icons/ai";
@@ -19,6 +20,7 @@ function Sidebar({ open, setOpen }) {
   const adminLinks = [
     { route: "DashBoard", icon: <MdDashboard /> },
     { route: "Products", icon: <AiOutlineProduct /> },
+    { route: "Customization", icon: <MdOutlineDashboardCustomize /> },
     { route: "Orders", icon: <TbShoppingBagCheck /> },
     { route: "Users", icon: <FaUsers /> },
     {

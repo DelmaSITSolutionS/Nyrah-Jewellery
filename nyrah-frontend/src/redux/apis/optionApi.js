@@ -49,6 +49,7 @@ export const endpoints = {
 export const getAllOptions = {};
 export const createOption = {};
 export const deleteOption = {};
+export const updateOption = {};
 
 // Loop through each key to create a thunk
 Object.keys(endpoints).forEach((key) => {
@@ -83,6 +84,30 @@ Object.keys(endpoints).forEach((key) => {
         }
 
         const { data } = await API.post(url, { [endpoint.field]: value });
+        return { key, option: data.data };
+      } catch (err) {
+        return thunkAPI.rejectWithValue(
+          err.response?.data?.message || err.message
+        );
+      }
+    }
+  );
+
+  updateOption[key] = createAsyncThunk(
+    `options/update/${key}`,
+    async ({ id, value }, thunkAPI) => {
+      try {
+        const url = `/admin/${endpoint.base}/${id}`;
+
+        if (value instanceof FormData) {
+          const { data } = await API.put(url, value, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          return { key, option: data.data };
+        }
+
+        // Example: { stock: 5 } or { [endpoint.field]: "New Name" }
+        const { data } = await API.put(url, value);
         return { key, option: data.data };
       } catch (err) {
         return thunkAPI.rejectWithValue(

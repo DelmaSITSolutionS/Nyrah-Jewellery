@@ -11,6 +11,7 @@ import {
 const initialState = {
   items: [], // Array of cart item objects
   loading: false,
+  count: 0,
   error: null,
 };
 
@@ -37,7 +38,8 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+        state.items = action.payload.cart;
+        state.count = action.payload.count;
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
@@ -58,6 +60,7 @@ const cartSlice = createSlice({
       .addCase(removeFromCart.fulfilled, (state, action) => {
         const removedId = action.payload;
         state.items = state.items.filter((i) => i._id !== removedId);
+        state.count -= 1
       })
       .addCase(removeFromCart.rejected, (state, action) => {
         state.error = action.payload || "Failed to remove item";

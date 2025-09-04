@@ -14,9 +14,11 @@ import { CiViewBoard } from "react-icons/ci";
 import { BsPerson } from "react-icons/bs";
 import { IoMdLogOut } from "react-icons/io";
 import { PiHandbagSimpleLight } from "react-icons/pi";
+import CurrencySelector from "../CurrencySelector ";
 
-function Navbar({ setCartOpen, login, setLogin }) {
+function Navbar({ setCartOpen, login, setLogin,selected,setSelected }) {
   const { user, isAuthenticated } = useSelector((state) => state.user);
+  const { count } = useSelector((state) => state.cart);
   const [openNav, setOpenNav] = useState(false);
 
   const { categories } = useSelector((state) => state.category);
@@ -61,8 +63,8 @@ function Navbar({ setCartOpen, login, setLogin }) {
         <div className="social-icon">
           <svg
             onClick={() => setOpenNav(true)}
-            width="26"
-            height="26"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -86,6 +88,13 @@ function Navbar({ setCartOpen, login, setLogin }) {
               strokeLinecap="round"
             />
           </svg>
+        <div className="logo">
+          <NavLink to={"/"}>
+            <img src={goldenLogo} alt="LOGO" />
+          </NavLink>
+        </div>
+        </div>
+        <div className="user-icon">
           {isAuthenticated ? (
             <div className="dropdown dropdown-center">
               <div tabIndex={0} role="button">
@@ -157,11 +166,11 @@ function Navbar({ setCartOpen, login, setLogin }) {
               </ul>
             </div>
           ) : (
-            <NavLink onClick={() => setLogin((prev) => !prev)} to={"/"}>
+            <NavLink onClick={() => setLogin((prev) => !prev)} to={"#"}>
               <svg
-                width="22"
-                height="22"
-                viewBox="0 0 26 26"
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
@@ -182,13 +191,6 @@ function Navbar({ setCartOpen, login, setLogin }) {
               </svg>
             </NavLink>
           )}
-        </div>
-        <div className="logo">
-          <NavLink to={"/"}>
-            <img src={goldenLogo} alt="LOGO" />
-          </NavLink>
-        </div>
-        <div className="user-icon">
           <button onClick={() => setShowSearch(true)}>
             <svg
               width="22"
@@ -213,7 +215,10 @@ function Navbar({ setCartOpen, login, setLogin }) {
               />
             </svg>
           </button>
-          <button onClick={handleCart}>
+          <button className="indicator" onClick={handleCart}>
+            <span className="indicator-item z-1 badge rounded-full p-0 h-4 w-4 top-1.5 badge-neutral font-semibold text-[10px]">
+              {count}
+            </span>
             <svg
               width="22"
               height="22"
@@ -253,10 +258,11 @@ function Navbar({ setCartOpen, login, setLogin }) {
               />
             </svg>
           </button>
+          <CurrencySelector/>
         </div>
       </div>
       <div
-        className={`mobile-nav-box ${
+        className={`mobile-nav-box z-2 ${
           !openNav ? "slide-right" : "slide-current"
         }`}
       >
@@ -563,14 +569,11 @@ function Navbar({ setCartOpen, login, setLogin }) {
           </li>
         </ul>
       </div>
-              {/* https://www.facebook.com/share/16VQe1nbEx/?mibextid=wwXIfr */}
-              {/* https://maps.app.goo.gl/i88EzywbYGLfExkSA */}
-              {/* https://www.instagram.com/nyrahjewelry?igsh=b29pbG10bjFhOGIy */}
       {/* desktop view  */}
       <div className="first-part">
-        <div className="social-icon">
+        <div className="social-icon w-14">
           <NavLink
-            to={"/"}
+            to={"https://www.instagram.com/nyrahjewelry?igsh=b29pbG10bjFhOGIy"}
             target="_blank"
           >
             <svg
@@ -599,7 +602,7 @@ function Navbar({ setCartOpen, login, setLogin }) {
             </svg>
           </NavLink>
           <NavLink
-            to={"/"}
+            to={"https://www.facebook.com/share/16VQe1nbEx/?mibextid=wwXIfr"}
             target="_blank"
           >
             <svg
@@ -619,7 +622,10 @@ function Navbar({ setCartOpen, login, setLogin }) {
               />
             </svg>
           </NavLink>
-          <NavLink to={"/"} target="_blank">
+          <NavLink
+            to={"https://maps.app.goo.gl/i88EzywbYGLfExkSA"}
+            target="_blank"
+          >
             <svg
               width="22"
               height="22"
@@ -715,7 +721,7 @@ function Navbar({ setCartOpen, login, setLogin }) {
               </ul>
             </div>
           ) : (
-            <NavLink onClick={() => setLogin((prev) => !prev)} to={"/"}>
+            <NavLink onClick={() => setLogin((prev) => !prev)} to={"#"}>
               <svg
                 width="22"
                 height="22"
@@ -765,7 +771,10 @@ function Navbar({ setCartOpen, login, setLogin }) {
               />
             </svg>
           </button>
-          <button onClick={handleCart}>
+          <button className="indicator" onClick={handleCart}>
+            <span className="indicator-item badge rounded-full p-0 h-4 w-4 top-1.5 badge-neutral font-semibold text-[10px]">
+              {count}
+            </span>
             <svg
               width="22"
               height="22"
@@ -805,6 +814,7 @@ function Navbar({ setCartOpen, login, setLogin }) {
               />
             </svg>
           </button>
+          <CurrencySelector/>
         </div>
       </div>
       <div className="second-part">

@@ -8,14 +8,12 @@ function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
     chainLengths = [],
     metalPurity = [],
     stoneType = [],
-    finish = [],
   } = detailData || {};
 
   useEffect(() => {
     onChange((prev) => ({
       ...prev,
       metalPurity: metalPurity[0],
-      finish: finish[0],
       stoneType: stoneType[0],
     }));
   }, []);
@@ -33,29 +31,27 @@ function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
         {/* Metal Purity */}
         <CustomizationPillSelect
           label="Metal Purity"
-          options={metalPurity}
+          options={[metalPurity[0]]}
           name="metalPurity"
-          value={selectedCustomizations?.metalPurity?.value}
+          value={selectedCustomizations?.metalPurity}
           onChange={handleSelectChange}
-          price={true}
         />
 
         {/* Size Options */}
         <CustomizationPillSelect
           label="Necklace Size"
           options={sizes}
-          name="nacklaceSize"
-          value={selectedCustomizations?.nacklaceSize?.value}
+          name="sizes"
+          value={selectedCustomizations?.sizes?.value}
           onChange={handleSelectChange}
           size={true}
         />
 
-        {/* chain length */}
         <CustomizationPillSelect
-          label="Chain Length"
+          label="Chain length"
           options={chainLengths}
-          name="chainLength"
-          value={selectedCustomizations?.chainLength?.value}
+          name="chainLengths"
+          value={selectedCustomizations?.chainLengths?.value}
           onChange={handleSelectChange}
           size={true}
         />
@@ -63,21 +59,10 @@ function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
         {/* stone type  */}
         <CustomizationPillSelect
           label="Stone Type"
-          options={stoneType}
+          options={stoneType.length&&[stoneType[0]]}
           name="stoneType"
-          value={selectedCustomizations?.stoneType?.value}
+          value={selectedCustomizations?.stoneType}
           onChange={handleSelectChange}
-          price={true}
-        />
-
-        {/* Finish */}
-        <CustomizationSelect
-          label="finish"
-          options={finish}
-          name="finish"
-          value={selectedCustomizations?.finish?.value}
-          onChange={handleSelectChange}
-          price={true}
         />
       </div>
     </div>

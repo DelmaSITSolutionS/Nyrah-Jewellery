@@ -28,17 +28,15 @@ const createProductByCategory = catchAsyncErrors(async (req, res, next) => {
   let mainCategory = req.body.category.main;
   const detailKey = `${mainCategory}Details`;
 
-
   const slice1 = mainCategory.slice(0, 1).toUpperCase();
   const slice2 = mainCategory.slice(1);
   mainCategory = slice1 + slice2;
+
 
   const DetailModel = models[mainCategory];
   let detailData = req.body[detailKey];
 
   detailData = JSON.parse(detailData);
-
-
 
   if (!DetailModel || !detailData) {
     return next(new ErrorHandler("Missing or invalid product details", 400));
@@ -269,9 +267,19 @@ const updateProductVariant = catchAsyncErrors(async (req, res, next) => {
   const updatedFields = { ...req.body };
 
   // 1. Handle new images (if provided)
+  // 1. Handle new + existing images
   if (req.files?.images?.length) {
     const uploadedImages = await uploadMany(req.files.images, "products");
-    updatedFields.images = uploadedImages.map((i) => i.url);
+    const newImgs = uploadedImages.map((i) => i.url);
+
+    // merge with existingImg sent from frontend
+    updatedFields.images = [
+      ...(req.body.existingImg ? JSON.parse(req.body.existingImg) : []),
+      ...newImgs,
+    ];
+  } else if (req.body.existingImg) {
+    // only keep existing images if no new uploads
+    updatedFields.images = JSON.parse(req.body.existingImg);
   }
 
   // 2. Handle new video (if provided)
@@ -349,7 +357,7 @@ const calculateFinalPriceForClient = catchAsyncErrors(async (req, res) => {
     customizations,
   });
 
-  res.status(200).json({ finalPrice, customizationPrice });
+  res.status(200).json({ finalPrice:customizationPrice!==0 ? customizationPrice:finalPrice,customizationPrice });
 });
 
 const getSearchedProducts = catchAsyncErrors(async (req, res) => {
@@ -456,7 +464,7 @@ const getProductsByMaterialTag = catchAsyncErrors(async (req, res, next) => {
   // Apply filters using AggregationFeatures
   const features = new AggregationFeatures(pipeline, req.query).filter();
 
-   // Add grouping and root-replacement
+  // Add grouping and root-replacement
   features.pipeline.push(
     { $sort: { createdAt: 1 } },
     {
@@ -497,58 +505,60 @@ const getProductsByMaterialTag = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-const getProductsByMaterialTagAndSub = catchAsyncErrors(async (req, res, next) => {
-  const { tag, sub } = req.params;
+const getProductsByMaterialTagAndSub = catchAsyncErrors(
+  async (req, res, next) => {
+    const { tag, sub } = req.params;
 
-  let pipeline = [
-    {
-      $match: {
-        "material.tag": {
-          $regex: new RegExp("^" + tag + "$", "i"),
-        },
-        "material.sub": {
-          $regex: new RegExp("^" + sub + "$", "i"),
+    let pipeline = [
+      {
+        $match: {
+          "material.tag": {
+            $regex: new RegExp("^" + tag + "$", "i"),
+          },
+          "material.sub": {
+            $regex: new RegExp("^" + sub + "$", "i"),
+          },
         },
       },
-    },
-  ];
+    ];
 
-  const features = new AggregationFeatures(pipeline, req.query).filter();
+    const features = new AggregationFeatures(pipeline, req.query).filter();
 
-   // Add grouping and root-replacement
-  features.pipeline.push(
-    { $sort: { createdAt: 1 } },
-    {
-      $group: {
-        _id: "$productGroup",
-        product: { $first: "$$ROOT" },
+    // Add grouping and root-replacement
+    features.pipeline.push(
+      { $sort: { createdAt: 1 } },
+      {
+        $group: {
+          _id: "$productGroup",
+          product: { $first: "$$ROOT" },
+        },
       },
-    },
-    { $replaceRoot: { newRoot: "$product" } }
-  );
+      { $replaceRoot: { newRoot: "$product" } }
+    );
 
-  features.forceSortBeforeGroup("createdAt", 1);
+    features.forceSortBeforeGroup("createdAt", 1);
 
-  const countPipeline = [...features.pipeline];
-  countPipeline.push({ $count: "totalCount" });
-  const countResult = await Product.aggregate(countPipeline);
-  const totalCount = countResult[0]?.totalCount || 0;
+    const countPipeline = [...features.pipeline];
+    countPipeline.push({ $count: "totalCount" });
+    const countResult = await Product.aggregate(countPipeline);
+    const totalCount = countResult[0]?.totalCount || 0;
 
-  // ✅ Optional: apply user sort on grouped results
-  features.sortAfterGroup();
+    // ✅ Optional: apply user sort on grouped results
+    features.sortAfterGroup();
 
-  features.paginate(12);
+    features.paginate(12);
 
-  const products = await Product.aggregate(features.pipeline);
-  const populated = await Product.populate(products, { path: "detailsRef" });
+    const products = await Product.aggregate(features.pipeline);
+    const populated = await Product.populate(products, { path: "detailsRef" });
 
-  res.status(200).json({
-    success: true,
-    count: populated.length,
-    totalCount,
-    products: populated,
-  });
-});
+    res.status(200).json({
+      success: true,
+      count: populated.length,
+      totalCount,
+      products: populated,
+    });
+  }
+);
 
 const getTopRatedProducts = catchAsyncErrors(async (req, res) => {
   const products = await Product.find({ rating: { $gt: 4 } })
@@ -562,7 +572,6 @@ const getLowStockProducts = catchAsyncErrors(async (req, res) => {
   const products = await Product.find({ stock: { $lt: 10 } }).limit(4);
   res.status(200).json({ success: true, products });
 });
-
 
 module.exports = {
   createProductByCategory,
@@ -578,5 +587,5 @@ module.exports = {
   getProductsByMaterialTag,
   getProductsByMaterialTagAndSub,
   getTopRatedProducts,
-  getLowStockProducts
+  getLowStockProducts,
 };

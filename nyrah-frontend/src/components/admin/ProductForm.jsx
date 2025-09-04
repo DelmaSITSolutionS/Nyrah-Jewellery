@@ -12,6 +12,7 @@ import EarringForm from "./DetailsForm/EarringForm";
 import PendantForm from "./DetailsForm/PendantForm";
 
 import imageCompression from "browser-image-compression";
+import { IoIosClose } from "react-icons/io";
 
 export default function ProductForm({
   initial = null,
@@ -34,9 +35,9 @@ export default function ProductForm({
     },
   });
 
-  const [images, setImages] = useState([]); // File[] or string[]
-  const [imagePreviews, setImagePreviews] = useState([]); // store preview URLs
-  const [video, setVideo] = useState(null); // File | string | null
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [video, setVideo] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [detailInitial, setDetailInitial] = useState(null);
@@ -46,7 +47,6 @@ export default function ProductForm({
   const materialTag = watch("materialTag");
   const materialSub = watch("materialSub");
 
-  // Populate initial data on edit
   useEffect(() => {
     if (initial && initial._id) {
       reset({
@@ -54,13 +54,12 @@ export default function ProductForm({
         name: initial.name || "",
         shortDescription: initial.shortDescription || "",
         price: initial.price || "",
-        stock: initial.stock || 1,
+        stock: initial.stock,
         categoryMain: initial.category?.main || "",
         categorySub: initial.category?.sub || [],
         materialTag: initial.material?.tag || "",
         materialSub: initial.material?.sub || [],
         productGroup: initial.productGroup || "",
-        moreDetail: initial.moreDetail || "",
       });
 
       setImages(initial.images || []);
@@ -79,16 +78,20 @@ export default function ProductForm({
 
   const handleImageChange = async (e) => {
     setLoadImage(true);
-    const files = Array.from(e.target.files).slice(0, 4);
-    if (files.length > 4) toast.error("Maximum 4 images");
+    const files = Array.from(e.target.files);
+
+    if (files.length + images.length > 4) {
+      toast.error("Maximum 4 images");
+      setLoadImage(false);
+      return;
+    }
 
     const compressedFiles = [];
-
     for (const file of files) {
       try {
         if (file.size > 5 * 1024 * 1024) {
           const compressed = await imageCompression(file, {
-            maxSizeMB: 9, // Adjust as needed to stay below 10MB
+            maxSizeMB: 9,
             maxWidthOrHeight: 1920,
             useWebWorker: true,
           });
@@ -102,18 +105,20 @@ export default function ProductForm({
       }
     }
 
-    setImages(compressedFiles);
+    setImages((prev) => [...prev, ...compressedFiles]);
     setLoadImage(false);
   };
 
-  // generate preview URLs
+  const handleRemoveImage = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   useEffect(() => {
     const urls = images.map((img) =>
       typeof img === "string" ? img : URL.createObjectURL(img)
     );
     setImagePreviews(urls);
 
-    // Cleanup blobs
     return () => {
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
@@ -134,19 +139,22 @@ export default function ProductForm({
     const fd = new FormData();
     images.slice(0, 4).forEach((img, i) => {
       if (img instanceof Blob) {
-        // Assign filename:
-        const filename = img.name ? img.name : `image-${i + 1}.jpg`; // fallback for blob
-
+        const filename = img.name ? img.name : `image-${i + 1}.jpg`;
         fd.append("images", img, filename);
       }
     });
+
+    const existingImgs = images.filter((img) => typeof img === "string");
+    if (existingImgs.length) {
+      fd.append("existingImg", JSON.stringify(existingImgs));
+    }
+
     if (video instanceof File) {
       fd.append("video", video);
     }
 
     fd.append("name", data.name);
     fd.append("shortDescription", data.shortDescription);
-    fd.append("moreDetail", data.moreDetail || "");
     fd.append("price", Number(data.price));
     fd.append("stock", Number(data.stock));
 
@@ -181,10 +189,8 @@ export default function ProductForm({
     }
   };
 
-  // Cleanup ObjectURLs
   useEffect(() => {
     const objectURLs = [];
-
     images.forEach((img) => {
       if (img instanceof File) {
         const url = URL.createObjectURL(img);
@@ -224,7 +230,6 @@ export default function ProductForm({
         return (
           <PendantForm initial={detailInitial} onChange={handleDetailChange} />
         );
-      // Add other cases like "pendant", "necklace", "earring" here
       default:
         return null;
     }
@@ -262,19 +267,6 @@ export default function ProductForm({
         />
       </div>
 
-      <div>
-        <label htmlFor="moreDetail" className="label">
-          More Detail
-        </label>
-        <textarea
-          id="moreDetail"
-          rows={4}
-          className="textarea textarea-bordered w-full"
-          placeholder="e.g. Care instructions, inspiration, etc."
-          {...register("moreDetail")}
-        />
-      </div>
-
       {/* Price & Stock */}
       <div className="grid grid-cols-2 gap-2">
         <div>
@@ -306,24 +298,30 @@ export default function ProductForm({
         <label htmlFor="image" className="label">
           Images (max 4)
         </label>
-
         {imagePreviews.length > 0 && (
           <div className="flex gap-2 mb-2 flex-wrap">
             {!loadImage ? (
               imagePreviews.map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  alt="preview"
-                  className="w-16 h-16 object-cover rounded"
-                />
+                <div key={i} className="relative">
+                  <img
+                    src={src}
+                    alt="preview"
+                    className="w-18 h-18 object-cover rounded"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(i)}
+                    className="absolute top-0 right-0 bg-black text-white rounded-full w-4 h-4 flex items-center justify-center cursor-pointer"
+                  >
+                    <IoIosClose />
+                  </button>
+                </div>
               ))
             ) : (
               <div className="w-16 h-16 skeleton"></div>
             )}
           </div>
         )}
-
         <input
           id="image"
           type="file"
@@ -403,7 +401,7 @@ export default function ProductForm({
           {...register("materialTag", { required: true })}
         >
           {materials.map((c) => (
-            <option key={c.tag} value={c.tag} >
+            <option key={c.tag} value={c.tag}>
               {c.tag}
             </option>
           ))}
@@ -432,7 +430,7 @@ export default function ProductForm({
         />
       </div>
 
-      {/* Ring Details */}
+      {/* Details Form based on category */}
       {renderDetailForm()}
 
       <Button type="submit" disabled={submitting} className="w-full">

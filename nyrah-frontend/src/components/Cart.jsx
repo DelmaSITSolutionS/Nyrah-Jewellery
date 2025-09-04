@@ -9,12 +9,59 @@ import {
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { VscClose } from "react-icons/vsc";
+import currencyConverter from "../utils/currencyConverter";
 
 export default function Cart({ isOpen, onClose }) {
   const dispatch = useDispatch();
   const { items: cartItems } = useSelector((s) => s.cart);
   const [qty, setQty] = useState({});
+
+  const [convertedPrices, setConvertedPrices] = useState({});
+  const [totalPrice, setTotalPrice] = useState(null);
+
   const navigate = useNavigate();
+
+  const total = cartItems.reduce(
+    (t, i) => t + i.finalPrice * (qty[i._id] || i.quantity),
+    0
+  );
+
+  const selectedCurrency = useSelector((state) => state.currency.selected);
+
+  const symbol = selectedCurrency?.currencies
+    ? selectedCurrency.currencies[Object.keys(selectedCurrency.currencies)[0]]
+        .symbol
+    : "₹";
+
+  /* convert total + each product price */
+  useEffect(() => {
+    let isMounted = true;
+    const convertAll = async () => {
+      if (!selectedCurrency) return;
+
+      // convert total
+      const convertedTotal = await currencyConverter(
+        selectedCurrency,
+        Number(total)
+      );
+      if (isMounted) setTotalPrice(convertedTotal);
+
+      // convert each item price
+      const priceMap = {};
+      for (let item of cartItems) {
+        priceMap[item._id] = await currencyConverter(
+          selectedCurrency,
+          Number(item.finalPrice)
+        );
+      }
+      if (isMounted) setConvertedPrices(priceMap);
+    };
+
+    convertAll();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCurrency, cartItems, total]);
 
   /* fetch once */
   useEffect(() => {
@@ -35,11 +82,6 @@ export default function Cart({ isOpen, onClose }) {
     return () => document.body.classList.remove("overflow-hidden");
   }, [isOpen]);
 
-  const total = cartItems.reduce(
-    (t, i) => t + i.finalPrice * (qty[i._id] || i.quantity),
-    0
-  );
-
   /* animation variants */
   const backdrop = {
     hidden: { opacity: 0 },
@@ -51,8 +93,6 @@ export default function Cart({ isOpen, onClose }) {
     show: { x: 0, transition: { type: "tween", duration: 0.3 } },
     exit: { x: "100%", transition: { type: "tween", duration: 0.25 } },
   };
-
-
 
   return (
     <AnimatePresence>
@@ -118,9 +158,15 @@ export default function Cart({ isOpen, onClose }) {
                         </p>
                       </div> */}
                       <div>
-                        <span className="font-[400] text-[#4A4A4A] text-[.9rem] font-poppins">
-                          ₹ {it.finalPrice.toLocaleString()}
-                        </span>
+                        {convertedPrices[it._id] ? (
+                          <span className="font-poppins text-[.9rem]">
+                            {symbol} {convertedPrices[it._id].toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="skeleton text-white">
+                            Loading...
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center mt-2 gap-2">
                         <div className="flex items-center border ">
@@ -182,9 +228,13 @@ export default function Cart({ isOpen, onClose }) {
                   <span className="text-[1rem] font-cardo uppercase tracking-wide font-[400] ">
                     Total :
                   </span>
-                  <span className="font-[400] text-[#4A4A4A] text-[1rem] font-poppins">
-                    ₹ {total.toLocaleString()}
-                  </span>
+                  {totalPrice !== null ? (
+                    <span>
+                      {symbol} {totalPrice.toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="skeleton text-white">Loading...</span>
+                  )}
                 </div>
                 <button
                   className="btn btn-outline btn-neutral rounded-none uppercase tracking-wider font-[400] w-full mt-4"

@@ -1,101 +1,107 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllOptions } from "../../../redux/apis/optionApi";
 import MultiSelectDropdown from "../MultiSelectDropdown";
 import isEqual from "lodash.isequal";
-import SuggestedValuePriceFieldArray from "../SuggestedValuePriceFieldArray";
 
 function BraceletForm({ initial = {}, onChange }) {
   const dispatch = useDispatch();
-  // console.log(initial)
-  const { control, watch, setValue, register, reset, getValues } = useForm({
-    defaultValues: {
+  const { control, watch, setValue, register, reset } = useForm({
+    defaultValues: useMemo(() => ({
       sizeOptions: [],
       metalPurity: [],
       metalTone: "",
-      gemstoneOption: [],
-      finish: [],
+      stoneType: [],
+      finish: "", // Changed to a single value
       customization: {
-        nameEngravingAvailable: false,
-        sizeCustomizable: false,
-        metalCustomizable: false,
-        gemstoneCustomizable: false,
+        engravingAvailable: false,
       },
       certification: {
         isCertified: false,
         certType: "",
+        isHallmarked: false,
       },
       weight: "",
       careInstructions: "Avoid harsh chemicals, store in dry pouch",
       shippingNote: "Free shipping in India. Worldwide delivery",
       deliveryTime: "5–7 days (regular), 15–20 days (custom orders)",
-    },
+    }), []),
   });
 
   const featureSlice = useSelector((s) => s.options);
   const { list: metalPurities = [] } = featureSlice["metalPurity"] || {};
   const { list: metalTones = [] } = featureSlice["metalTone"] || {};
   const { list: braceletSizes = [] } = featureSlice["braceletSize"] || {};
-  const { list: gemstoneOptions = [] } = featureSlice["stoneShape"] || {};
-  const { list: finishOptions = [] } = featureSlice["finish"] || {};
+  const { list: stoneTypes = [] } = featureSlice["stoneType"] || {};
+  const { list: finishes = [] } = featureSlice["finish"] || {};
 
-  
   const braceletSizeOptions = braceletSizes.map((s) => s.braceletSize);
+  const metalPurityOptions = metalPurities.map((p) => p.name);
+  const stoneTypeOptions = stoneTypes.map((st) => st.type);
+  const finishOptions = finishes.map((f) => f.finish);
 
   useEffect(() => {
-    dispatch(getAllOptions["braceletSize"]?.());
-    dispatch(getAllOptions["metalPurity"]?.());
-    dispatch(getAllOptions["metalTone"]?.());
-    dispatch(getAllOptions["stoneShape"]?.());
-    dispatch(getAllOptions["finish"]?.());
+    dispatch(getAllOptions["braceletSize"]());
+    dispatch(getAllOptions["metalPurity"]());
+    dispatch(getAllOptions["metalTone"]());
+    dispatch(getAllOptions["stoneType"]());
+    dispatch(getAllOptions["finish"]());
   }, [dispatch]);
 
-  console.log(initial)
+  // Set default values for single-select fields once their data is loaded
+  useEffect(() => {
+    if (metalTones.length > 0) {
+      const initialTone = initial?.metalTone;
+      if (initialTone && metalTones.some((t) => t.name === initialTone)) {
+        setValue("metalTone", initialTone);
+      } else if (metalTones.length > 0) {
+        setValue("metalTone", metalTones[0].name);
+      }
+    }
+  }, [metalTones, initial, setValue]);
 
+  useEffect(() => {
+    if (finishes.length > 0 && initial?.finish) {
+      setValue("finish", initial.finish);
+    }
+  }, [finishes, initial, setValue]);
+
+  useEffect(() => {
+    if (initial?.weight) {
+      setValue("weight", initial.weight);
+    }
+    if (initial?.careInstructions) {
+      setValue("careInstructions", initial.careInstructions);
+    }
+    if (initial?.shippingNote) {
+      setValue("shippingNote", initial.shippingNote);
+    }
+    if (initial?.deliveryTime) {
+      setValue("deliveryTime", initial.deliveryTime);
+    }
+  }, [initial, setValue]);
+
+  // Handle form reset with initial data
   useEffect(() => {
     if (initial && Object.keys(initial).length) {
-      const merged = {
-        ...getValues(),
+      reset({
         ...initial,
-        gemstoneOption: initial.gemstoneOption || [],
-        finish: initial.finish || [],
         customization: {
-          ...getValues().customization,
-          ...initial.customization,
+          engravingAvailable: initial.customization?.engravingAvailable || false,
         },
         certification: {
-          ...getValues().certification,
-          ...initial.certification,
+          isCertified: initial.certification?.isCertified || false,
+          certType: initial.certification?.certType || "",
+          isHallmarked: initial.certification?.isHallmarked || false,
         },
-      };
-      reset(merged);
+      });
     }
-  }, [initial]);
-
-  useEffect(() => {
-    if (
-      metalTones.length &&
-      (!initial?.metalTone ||
-        !metalTones.some((t) => t.name === initial.metalTone))
-    ) {
-      setValue("metalTone", metalTones[0].name);
-    }
-  }, [metalTones, initial]);
+  }, [initial, reset]);
 
   useEffect(() => {
     const subscription = watch((value) => {
-      const cleanStones = (arr) =>
-        Array.isArray(arr) ? arr.filter((v) => v.value?.trim()) : [];
-
-      const cleaned = {
-        ...value,
-        metalPurity: cleanStones(value.metalPurity),
-        gemstoneOption: cleanStones(value.gemstoneOption),
-        finish: cleanStones(value.finish),
-      };
-
-      onChange?.(cleaned);
+      onChange?.(value);
     });
     return () => subscription.unsubscribe();
   }, [watch, onChange]);
@@ -104,80 +110,124 @@ function BraceletForm({ initial = {}, onChange }) {
     <div className="mt-6 space-y-4 border-t pt-6">
       <h3 className="text-lg font-semibold">Bracelet Details</h3>
 
+     
+
+      {/* Metal Tone Selector */}
+      {metalTones.length > 0 ? (
+        <div>
+          <label htmlFor="metalTone" className="label pb-3">
+            Metal Tone :
+          </label>
+          <select
+            id="metalTone"
+            {...register("metalTone")}
+            className="input input-bordered w-full select"
+          >
+            {metalTones.map((t) => (
+              <option className="capitalize" key={t._id} value={t.name}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div className="skeleton h-12 w-full"></div>
+      )}
+
+      <Controller
+        control={control}
+        name="metalPurity"
+        render={({ field }) =>
+          metalPurityOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Metal Purity"
+              options={metalPurityOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
+
+      <Controller
+        control={control}
+        name="stoneType"
+        render={({ field }) =>
+          stoneTypeOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Stone Type"
+              options={stoneTypeOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
+
+       {/* Multi-select fields remain the same */}
       <Controller
         control={control}
         name="sizeOptions"
-        render={({ field }) => (
-          <MultiSelectDropdown
-            label="Size Options"
-            options={braceletSizeOptions}
-            selected={field.value}
-            onChange={field.onChange}
-          />
-        )}
+        render={({ field }) =>
+          braceletSizeOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Size Options"
+              options={braceletSizeOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
       />
 
-      <div>
-        <label htmlFor="metalTone" className="label pb-3">
-          Metal Tone :
-        </label>
-        <select
-          id="metalTone"
-          {...register("metalTone")}
-          className="input input-bordered w-full select"
-        >
-          {metalTones.map((t, i) => (
-            <option className="capitalize" key={i} value={t.name}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Finish Selector */}
+      {finishes.length > 0 ? (
+        <div>
+          <label htmlFor="finish" className="label pb-3">
+            Finish :
+          </label>
+          <select
+            id="finish"
+            {...register("finish")}
+            className="input input-bordered w-full select"
+          >
+            <option value="">Select a finish</option>
+            {finishOptions.map((f, i) => (
+              <option key={i} value={f}>
+                {f}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div className="skeleton h-12 w-full"></div>
+      )}
 
-      <SuggestedValuePriceFieldArray
-        control={control}
-        register={register}
-        name="metalPurity"
-        label="Metal Purity"
-        optionList={metalPurities}
-      />
+      {/* Customization Checkbox */}
+      <label className="cursor-pointer label">
+        <p className="label-text inline pe-2">Engraving Available:</p>
+        <input
+          type="checkbox"
+          {...register("customization.engravingAvailable")}
+          className="checkbox checkbox-primary"
+        />
+      </label>
 
-      <SuggestedValuePriceFieldArray
-        control={control}
-        register={register}
-        name="gemstoneOption"
-        label="Gemstone Options"
-        optionList={gemstoneOptions}
-      />
-
-      <SuggestedValuePriceFieldArray
-        control={control}
-        register={register}
-        name="finish"
-        label="Finish Options"
-        optionList={finishOptions}
-      />
-
-      {/* Customization Checkboxes */}
-      {[
-        "nameEngravingAvailable",
-        "sizeCustomizable",
-        "metalCustomizable",
-        "gemstoneCustomizable",
-      ].map((key) => (
-        <label key={key} className="cursor-pointer label">
-          <p className="label-text inline pe-2">
-            {key.replace(/([A-Z])/g, " $1")}:
-          </p>
-          <input
-            type="checkbox"
-            {...register(`customization.${key}`)}
-            className="checkbox checkbox-primary"
-          />
-        </label>
-      ))}
-
-      {/* Certification */}
+      {/* Certification Checkboxes */}
+      <label className="cursor-pointer label">
+        <span className="label-text pe-2">Hallmarked :</span>
+        <input
+          type="checkbox"
+          {...register("certification.isHallmarked")}
+          className="checkbox checkbox-primary"
+        />
+      </label>
       <label className="cursor-pointer label">
         <span className="label-text pe-2">Certified :</span>
         <input
@@ -251,8 +301,8 @@ function BraceletForm({ initial = {}, onChange }) {
   );
 }
 
-export default React.memo(
-  BraceletForm,
-  (prev, next) =>
-    isEqual(prev.initial, next.initial) && prev.onChange === next.onChange
-);
+const propsAreEqual = (prev, next) => {
+  return isEqual(prev.initial, next.initial) && prev.onChange === next.onChange;
+};
+
+export default React.memo(BraceletForm, propsAreEqual);

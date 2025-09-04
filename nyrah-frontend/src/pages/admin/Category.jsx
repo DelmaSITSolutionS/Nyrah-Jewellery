@@ -32,7 +32,7 @@ function Category() {
     },
   });
 
-  console.log(editCat);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,7 +44,7 @@ function Category() {
 
   const editCategory = (id, main, sub) => {
     dispatch(updateCategory({ id, main, sub }));
-    setEditCat({ id: "", main: "", sub: { oldSub: "", newSub: "" } });
+    setEditCat({ id: "", main: "", sub: { old: "", new: "" } });
   };
 
   const addMain = (payload) => {

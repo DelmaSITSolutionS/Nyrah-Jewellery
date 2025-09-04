@@ -1,5 +1,5 @@
 // src/pages/order/OrderDetail.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { getOrderDetails } from "../../redux/apis/orderApi";
@@ -7,26 +7,121 @@ import { FaBoxesPacking } from "react-icons/fa6";
 import { FaShippingFast } from "react-icons/fa";
 import { GiCheckMark } from "react-icons/gi";
 import { MdClose } from "react-icons/md";
+import currencyConverter from "../../utils/currencyConverter";
 
-/* ——————————————————————————————————————————————— */
-/* Small helpers */
-/* ——————————————————————————————————————————————— */
-const Row = ({ left, right, bold }) => (
-  <div className={`flex justify-between ${bold && "font-semibold"}`}>
+const Row = ({ left, right, bold, symbol }) => (
+  <div className={`flex justify-between ${bold ? "font-semibold" : ""}`}>
     <span>{left}</span>
-    <span className="whitespace-nowrap">₹ {right.toLocaleString()}</span>
+    <span className="whitespace-nowrap">
+      {symbol} {right != null ? right.toLocaleString() : "-"}
+    </span>
   </div>
 );
 
 export default function OrderDetail({ mode = "user" }) {
   const { id } = useParams();
   const dispatch = useDispatch();
-
   const { selectedOrder, loading, error } = useSelector((s) => s.order);
+
+  const [converted, setConverted] = useState({
+    subtotal: 0,
+    gst: 0,
+    shipping: 0,
+    engraving: 0,
+    hallmarking: 0,
+    specialR: 0,
+    items: {},
+    customizations: {},
+  });
 
   useEffect(() => {
     dispatch(getOrderDetails(id));
   }, [dispatch, id]);
+
+  // Convert all prices once order is loaded
+  useEffect(() => {
+    if (!selectedOrder || !selectedOrder.currency) return;
+    let active = true;
+
+    const convertAll = async () => {
+      try {
+        const { currency, items = [], charges = {} } = selectedOrder;
+
+        // Convert item totals
+        const itemConversions = {};
+        const customizationConversions = {};
+        await Promise.all(
+          items.map(async (it) => {
+            const itemTotal = await currencyConverter(
+              null,
+              it.finalPrice * it.quantity,
+              currency
+            );
+            itemConversions[it.product._id || it.productId] = itemTotal;
+
+            // Convert customizations individually
+            if (it.customizations) {
+              customizationConversions[it._id] = {};
+              for (const [k, v] of Object.entries(it.customizations)) {
+                if (typeof v === "object" && v.price > 0) {
+                  customizationConversions[it._id][k] = await currencyConverter(
+                    null,
+                    v.price,
+                    currency
+                  );
+                }
+              }
+            }
+          })
+        );
+
+        // Convert subtotal & charges
+        const subtotalRaw = items.reduce(
+          (t, it) => t + it.finalPrice * it.quantity,
+          0
+        );
+
+        const [
+          subtotalC,
+          gstC,
+          shippingC,
+          engravingC,
+          hallmarkingC,
+          specialRC,
+        ] = await Promise.all([
+          currencyConverter(null, subtotalRaw,currency),
+          currencyConverter(null, charges.gst || 0,currency),
+          currencyConverter(null, charges.shipping || 0,currency),
+          currencyConverter(null, charges.engraving || 0,currency),
+          currencyConverter(null, charges.hallmarking || 0,currency),
+          currencyConverter(null, charges.specialRequest || 0,currency),
+        ]);
+
+   
+
+        if (active) {
+          setConverted({
+            subtotal: subtotalC,
+            gst: gstC,
+            shipping: shippingC,
+            engraving: engravingC,
+            hallmarking: hallmarkingC,
+            specialR: specialRC,
+            items: itemConversions,
+            customizations: customizationConversions,
+          });
+        }
+      } catch (err) {
+        console.error("Conversion failed:", err);
+      }
+    };
+
+    convertAll();
+    return () => {
+      active = false;
+    };
+  }, [selectedOrder]);
+
 
   if (loading || !selectedOrder)
     return <p className="pt-[6rem] text-center">Loading order…</p>;
@@ -45,15 +140,14 @@ export default function OrderDetail({ mode = "user" }) {
     charges,
     items,
     totalAmount,
+    symbol,
     paymentInfo,
   } = selectedOrder;
 
-  const sub = items.reduce((t, it) => t + it.finalPrice * it.quantity, 0);
-
   return (
     <div
-      className={`px-4 md:px-8  ${
-        mode === "user" ? "md:py-[9rem] py-[6rem]":"py-6"
+      className={`px-4 md:px-8 ${
+        mode === "user" ? "md:py-[9rem] py-[6rem]" : "py-6"
       } max-w-5xl mx-auto font-roboto space-y-8`}
     >
       {/* HEADER */}
@@ -67,11 +161,9 @@ export default function OrderDetail({ mode = "user" }) {
         <ul className="steps w-full py-4">
           <li
             className={`step text-sm tracking-wider ${
-              (status === "Processing" ||
-                status === "Shipped" ||
-                status === "Delivered" ||
-                status === "Cancelled") &&
-              "step-neutral"
+              ["Processing", "Shipped", "Delivered", "Cancelled"].includes(status)
+                ? "step-neutral"
+                : ""
             }`}
           >
             <span className="step-icon">
@@ -84,10 +176,9 @@ export default function OrderDetail({ mode = "user" }) {
           </li>
           <li
             className={`step text-sm tracking-wider ${
-              (status === "Shipped" ||
-                status === "Delivered" ||
-                status === "Cancelled") &&
-              "step-neutral"
+              ["Shipped", "Delivered", "Cancelled"].includes(status)
+                ? "step-neutral"
+                : ""
             }`}
           >
             <span className="step-icon">
@@ -98,11 +189,7 @@ export default function OrderDetail({ mode = "user" }) {
               <p className="text-xs text-gray-500 italic">{statusMessage}</p>
             )}
           </li>
-          <li
-            className={`step text-sm tracking-wider ${
-              status === "Delivered" && "step-neutral"
-            }`}
-          >
+          <li className={`step text-sm tracking-wider ${status === "Delivered" ? "step-neutral" : ""}`}>
             <span className="step-icon">
               <GiCheckMark />
             </span>
@@ -112,16 +199,12 @@ export default function OrderDetail({ mode = "user" }) {
             )}
           </li>
           {status === "Cancelled" && (
-            <li
-              className={`step text-sm tracking-wider ${
-                status === "Cancelled" && "step-neutral"
-              }`}
-            >
+            <li className="step text-sm tracking-wider step-neutral">
               <span className="step-icon">
                 <MdClose />
               </span>
               Cancelled
-              {statusMessage && status === "Cancelled" && (
+              {statusMessage && (
                 <p className="text-xs text-gray-500 italic">{statusMessage}</p>
               )}
             </li>
@@ -132,9 +215,7 @@ export default function OrderDetail({ mode = "user" }) {
       {/* TIMELINE */}
       <section className="text-xs text-gray-500">
         {shippedAt && <p>🚚 Shipped: {new Date(shippedAt).toLocaleString()}</p>}
-        {deliveredAt && (
-          <p>📦 Delivered: {new Date(deliveredAt).toLocaleString()}</p>
-        )}
+        {deliveredAt && <p>📦 Delivered: {new Date(deliveredAt).toLocaleString()}</p>}
       </section>
 
       {/* ITEMS */}
@@ -151,31 +232,21 @@ export default function OrderDetail({ mode = "user" }) {
               className="w-20 h-20 object-cover"
             />
             <div className="flex-1 text-sm space-y-3">
-              <h3 className="tracking-wider font-cardo uppercase">
-                {it.product.name}
-              </h3>
-
-              <p>
-                <strong>SKU : </strong>
-                {it.product.productGroup}
-              </p>
+              <h3 className="tracking-wider font-cardo uppercase">{it.product.name}</h3>
+              <p><strong>SKU : </strong>{it.product.productGroup}</p>
 
               {it.customizations && (
                 <ul className="text-gray-600 space-y-1 font-poppins text-sm">
                   {Object.entries(it.customizations).map(([k, v]) => (
                     <li key={k}>
-                      <span className="capitalize text-black font-medium">
-                        {k}
-                      </span>{" "}
-                      :{" "}
-                      <span className="text-gray-800">
-                        {typeof v === "object" ? v.value : v}
-                      </span>
+                      <span className="capitalize text-black font-medium">{k}</span> :{" "}
+                      <span className="text-gray-800">{typeof v === "object" ? v.value : v}</span>
                       {mode === "admin" &&
                         typeof v === "object" &&
                         v.price > 0 && (
                           <span className="ml-2 text-xs text-green-600">
-                            (+₹{v.price})
+                            (+{symbol}
+                            {converted.customizations[it._id]?.[k]?.toLocaleString() || v.price.toLocaleString()})
                           </span>
                         )}
                     </li>
@@ -184,17 +255,24 @@ export default function OrderDetail({ mode = "user" }) {
               )}
 
               {mode === "admin" && (
-                <p className="text-xs  text-gray-700">
-                  Base: ₹
-                  {(it.finalPrice - it.customizationPrice).toLocaleString()} |{" "}
-                  Custom: ₹{it.customizationPrice.toLocaleString()}
+                <p className="text-xs text-gray-700">
+                  Base: {symbol}
+                  {converted.items[it.product._id || it.productId]
+                    ? (converted.items[it.product._id || it.productId] - (it.customizationPrice || 0)).toLocaleString()
+                    : (it.finalPrice - it.customizationPrice).toLocaleString()} |{" "}
+                  Custom: {symbol}
+                  {it.customizationPrice && converted.customizations[it._id]
+                    ? Object.values(converted.customizations[it._id]).reduce((a, b) => a + b, 0).toLocaleString()
+                    : (it.customizationPrice || 0).toLocaleString()}
                 </p>
               )}
 
               <p className="font-poppins">
-                Qty {it.quantity} × ₹ {it.finalPrice} ={" "}
+                Qty {it.quantity} × {symbol} {it.finalPrice} ={" "}
                 <strong>
-                  ₹ {(it.finalPrice * it.quantity).toLocaleString()}
+                  {symbol}
+                  {converted.items[it.product._id || it.productId]?.toLocaleString() ||
+                    (it.finalPrice * it.quantity).toLocaleString()}
                 </strong>
               </p>
             </div>
@@ -210,12 +288,8 @@ export default function OrderDetail({ mode = "user" }) {
         <div className="text-sm leading-6">
           <p>{shippingInfo.name}</p>
           <p>{shippingInfo.street}</p>
-          <p>
-            {shippingInfo.city} – {shippingInfo.pincode}
-          </p>
-          <p>
-            {shippingInfo.state}, {shippingInfo.country}
-          </p>
+          <p>{shippingInfo.city} – {shippingInfo.pincode}</p>
+          <p>{shippingInfo.state}, {shippingInfo.country}</p>
           <p>📞 {shippingInfo.phone}</p>
         </div>
       </section>
@@ -223,38 +297,26 @@ export default function OrderDetail({ mode = "user" }) {
       {/* PAYMENT SUMMARY */}
       <section className="border border-[#dddddd] font-poppins p-4 bg-base-100 space-y-2 text-sm">
         <h2 className="text-lg font-medium mb-2">Payment Summary</h2>
-        <Row left="Subtotal" right={sub} />
-        <Row left="GST" right={charges.gst || 0} />
-        <Row left="Shipping" right={charges.shipping || 0} />
-        {charges.engraving != 0 && (
-          <Row left="Engraving" right={charges.engraving} />
-        )}
-        {charges.hallmarking != 0 && (
-          <Row left="Hallmarking" right={charges.hallmarking} />
-        )}
-        {charges.specialRequest != 0 && (
-          <Row left="Special Request" right={charges.specialRequest} />
-        )}
+        <Row left="Subtotal" right={converted.subtotal} symbol={symbol} />
+        <Row left="GST" right={converted.gst} symbol={symbol} />
+        <Row left="Shipping" right={converted.shipping} symbol={symbol} />
+        {converted.engraving !== 0 && <Row left="Engraving" right={converted.engraving} symbol={symbol} />}
+        {converted.hallmarking !== 0 && <Row left="Hallmarking" right={converted.hallmarking} symbol={symbol} />}
+        {converted.specialR !== 0 && <Row left="Special Request" right={converted.specialR} symbol={symbol} />}
 
-        <Row left="Total Amount" right={totalAmount} bold />
+        {/* grandTotal stays as-is */}
+        <Row left="Total Amount" right={totalAmount} bold symbol={symbol} />
       </section>
 
-      {/* PAYMENT INFO (only admin) */}
-      {mode === "admin" ||
-        (paymentInfo && (
-          <section className="border p-4 bg-base-100 space-y-1 text-sm">
-            <h2 className="text-lg font-medium mb-2">Payment Info</h2>
-            <p>
-              <strong>Method:</strong> {paymentInfo?.provider || "—"}
-            </p>
-            <p>
-              <strong>Status:</strong> {paymentInfo?.status || "—"}
-            </p>
-            <p>
-              <strong>Payment ID:</strong> {paymentInfo?.id || "—"}
-            </p>
-          </section>
-        ))}
+      {/* PAYMENT INFO */}
+      {mode === "admin" || (paymentInfo && (
+        <section className="border p-4 bg-base-100 space-y-1 text-sm">
+          <h2 className="text-lg font-medium mb-2">Payment Info</h2>
+          <p><strong>Method:</strong> {paymentInfo?.provider || "—"}</p>
+          <p><strong>Status:</strong> {paymentInfo?.status || "—"}</p>
+          <p><strong>Payment ID:</strong> {paymentInfo?.id || "—"}</p>
+        </section>
+      ))}
     </div>
   );
 }

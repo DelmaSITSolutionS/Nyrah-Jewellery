@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import freeShipping from "../../assets/icons/free-delivery.png";
 import giftBox from "../../assets/icons/giftbox.png";
@@ -30,6 +31,13 @@ import ReviewSection from "../RatingAndReview/ReviewSection";
 import { IoIosStar } from "react-icons/io";
 import SwiperCard from "../Swiper/SwiperCard";
 import CustomRing from "./modelDetails/CustomRing";
+import currencyConverter from "../../utils/currencyConverter";
+
+import visa from "../../assets/payment/visa.png";
+import masterCard from "../../assets/payment/masterCard.png";
+import mastero from "../../assets/payment/mastero.png";
+import paypal from "../../assets/payment/paypal.png";
+import { FaWhatsapp } from "react-icons/fa6";
 
 function calculateCustomizationPrice(customizations) {
   if (!customizations) return 0;
@@ -54,7 +62,11 @@ function ProductDetail({ setCartOpen, setLogin }) {
   const [customizations, setCustomizations] = useState({});
   const [quantity, setQuantity] = useState(1);
   const [showGuide, setShowGuide] = useState(false);
+  const [productPrice, setProductPrice] = useState(null);
+  const [custom, setCustom] = useState(false);
   const { isAuthenticated } = useSelector((state) => state.user);
+
+  const navigate = useNavigate();
 
   const featureSlice = useSelector((s) => s.options);
   const { list: metalTones = [] } = featureSlice["metalTone"] || {};
@@ -62,22 +74,55 @@ function ProductDetail({ setCartOpen, setLogin }) {
   const { list: products } = useSelector((state) => state.product);
   const [customizationPrice, setCustomizationPrice] = useState(0);
 
+  const selectedCurrency = useSelector((state) => state.currency.selected);
+  const symbol = selectedCurrency?.currencies
+    ? selectedCurrency.currencies[Object.keys(selectedCurrency.currencies)[0]]
+        .symbol
+    : "₹";
+
   const basePrice = Number(selectedVariant?.price) || 0;
-  const grandTotal = basePrice + customizationPrice;
 
-  console.log(selectedVariant)
+  useEffect(() => {
+    let isMounted = true;
+    const convertPrice = async () => {
+      let converted;
+      if (!basePrice) return;
 
+      if (customizationPrice !== 0) {
+        converted = await currencyConverter(
+          selectedCurrency,
+          Number(customizationPrice)
+        );
+      } else {
+        converted = await currencyConverter(
+          selectedCurrency,
+          Number(basePrice)
+        );
+      }
 
+      if (isMounted) setProductPrice(converted);
+    };
+    convertPrice();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCurrency, basePrice, customizationPrice]);
 
   useEffect(() => {
     const fetchVariants = async () => {
+      // setCustomizations({})
       const data = await dispatch(
         getProductGroupVariants({ groupId: groupname })
       ).unwrap();
 
-      const firstVariant = data.variants[0];
+      const firstVariant = data.variants.filter((v,i)=> v.material.tag === "gold");
+      
+      // setCustomizations({
+      //   metalPurity: firstVariant?.detailsRef?.metalPurity[0],
+      //   stoneType: firstVariant?.detailsRef?.stoneType[0],
+      // });
       setVariants(data.variants);
-      setSelectedVariant(firstVariant);
+      setSelectedVariant(firstVariant[0]);
       setCategory(firstVariant?.category?.main);
       const initialMedia = [
         ...(data.variants[0]?.images || []),
@@ -89,9 +134,11 @@ function ProductDetail({ setCartOpen, setLogin }) {
     dispatch(getAllOptions["metalTone"]?.());
 
     fetchVariants();
-  }, [groupname]);
+  }, [groupname, custom]);
 
-    useEffect(() => {
+  console.log(customizations)
+
+  useEffect(() => {
     setCustomizationPrice(calculateCustomizationPrice(customizations));
   }, [customizations]);
 
@@ -100,6 +147,11 @@ function ProductDetail({ setCartOpen, setLogin }) {
       setCartOpen(false);
       setLogin(true);
       toast.error("Please login");
+      return;
+    }
+
+    if (selectedVariant.stock === 0) {
+      toast.error("Out of stock");
       return;
     }
     const payload = {
@@ -128,18 +180,22 @@ function ProductDetail({ setCartOpen, setLogin }) {
       toast.error("Please login");
       return;
     }
+
+    if (selectedVariant.stock === 0) {
+      toast.error("Out of stock");
+      return;
+    }
     const payload = {
       productId: selectedVariant._id,
       detailsRef: selectedVariant.detailsRef._id,
       detailsModel: selectedVariant.detailsModel,
       quantity,
       customizations,
-      finalPrice: selectedVariant.price, // Add price for checkout
       product: selectedVariant,
     };
 
     sessionStorage.setItem("buyNowItem", JSON.stringify(payload));
-    window.location.href = "/checkout?buynow=true";
+    navigate("/checkout?buynow=true"); // ← React Router navigation
   };
 
   useEffect(() => {
@@ -167,6 +223,23 @@ function ProductDetail({ setCartOpen, setLogin }) {
     ...(selectedVariant.images || []),
     selectedVariant.video,
   ].filter(Boolean);
+
+  const formatDescription = (text) => {
+    if (!text) return { intro: "", points: [] };
+
+    // Split by "✨ Details:" if exists
+    const [intro, details] = text.split("✨ Details:").map((t) => t.trim());
+
+    // Convert details into points using commas or newlines
+    const points = details
+      ? details
+          .split(/[\n,•]+/)
+          .map((d) => d.trim())
+          .filter(Boolean)
+      : [];
+
+    return { intro, points };
+  };
 
   return (
     <div className="pt-[6rem] lg:pt-[9rem] pb-10 px-[1rem] sm:px-[3rem] ">
@@ -249,13 +322,17 @@ function ProductDetail({ setCartOpen, setLogin }) {
               <span className="font-[500] font-poppins tracking-wider text-[#4A4A4A]">
                 stock :{" "}
               </span>
-              {quantity == 0 ? "Out of stock" : "In stock"}
+              {selectedVariant?.stock === 0 ? "Out of stock" : "In stock"}
             </p>
 
             <p className="text-xl font-poppins pb-3  font-medium flex flex-col gap-0.1">
-              <span>
-                &#8377; {grandTotal.toLocaleString()}
-              </span>
+              {productPrice !== null ? (
+                <span>
+                  {symbol} {productPrice.toLocaleString()}
+                </span>
+              ) : (
+                <span className="skeleton text-white">Loading...</span>
+              )}
               <span className="text-[.75rem] tracking-wider font-light text-[#8d8d8d]">
                 (MRP Inclusive of all taxes)
               </span>
@@ -346,6 +423,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                 className="tab  font-poppins text-[.75rem] [--tab-border-color:#cccccc] tracking-wide"
                 aria-label="Ready Available"
                 defaultChecked
+                onChange={() => setCustom((prev) => !prev)}
               />
               <div className="tab-content border-[#cccccc] bg-base-100 py-6 px-4">
                 {selectedVariant.category?.main === "ring" && (
@@ -394,17 +472,34 @@ function ProductDetail({ setCartOpen, setLogin }) {
                 name="my_tabs_3"
                 className="tab font-poppins text-[.75rem] [--tab-border-color:#cccccc] tracking-wide"
                 aria-label="Customization"
-                disabled={selectedVariant.category?.main !== "ring"}
+                disabled={
+                  selectedVariant.category?.main !== "ring"
+                    ? true
+                    : selectedVariant.material?.tag !== "gold"
+                }
+                onChange={() => setCustom((prev) => !prev)}
               />
-              {/* <div className="tab-content bg-base-100 border-[#cccccc] py-6 px-4">
-                 {selectedVariant.category?.main === "ring" && (
+              <div className="tab-content bg-base-100 border-[#cccccc] py-6 px-4">
+                {selectedVariant.category?.main === "ring" && (
                   <CustomRing
-                    detailData={selectedVariant.detailsRef}
+                    detailData={groupname}
                     selectedCustomizations={customizations}
                     onChange={setCustomizations}
                   />
                 )}
-              </div> */}
+                <div className="flex justify-between items-center gap-3 my-3">
+                  <hr className="w-full text-[#cccccc]" />
+                  <span className="text-xs text-[#676767]">OR</span>
+                  <hr className="w-full text-[#cccccc]" />
+                </div>
+                <a
+                  href="https://wa.me/9197335271778"
+                  target="_blank"
+                  className="flex justify-center gap-2 text-sm p-2 text-[green] items-center"
+                >
+                  <FaWhatsapp /> <span>Make an Enquiry</span>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -453,6 +548,14 @@ function ProductDetail({ setCartOpen, setLogin }) {
               <PiHandbagLight className="text-lg" />
               Buy Now
             </button>
+
+            {/* payment icons  */}
+            <div className="flex justify-center gap-1">
+              <img src={visa} alt="visa" />
+              <img src={masterCard} alt="masterCard" />
+              <img src={mastero} alt="mastero" />
+              <img src={paypal} alt="paypal" />
+            </div>
           </div>
 
           <div>
@@ -476,28 +579,45 @@ function ProductDetail({ setCartOpen, setLogin }) {
             </div>
 
             {selectedVariant?.shortDescription && (
-              <div className="collapse tracking-wider collapse-plus p-0  bg-base-100 border-[#d6d6d6] border-t-1 border-b-1 rounded-none mt-3">
+              <div className="collapse tracking-wider collapse-plus p-0 bg-base-100 border-[#d6d6d6] border-t-1 border-b-1 rounded-none mt-3">
                 <input type="checkbox" id="description" />
-                <div className="px-0 collapse-title font-semibold ">
+                <div className="px-0 collapse-title font-semibold">
                   Description
                 </div>
                 <div className="px-0 collapse-content text-sm text-justify first-letter:capitalize">
-                  {selectedVariant?.shortDescription}
+                  {(() => {
+                    const { intro, points } = formatDescription(
+                      selectedVariant.shortDescription
+                    );
+
+                    return (
+                      <>
+                        <p className="pb-2">{intro}</p>
+
+                        {points.length > 0 && (
+                          <ul className="list-disc list-inside pl-5 space-y-1">
+                            {points.map((point, idx) => (
+                              <li key={idx}>{point}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </>
+                    );
+                  })()}
 
                   {selectedVariant?.detailsRef.careInstructions && (
                     <li className="pt-3">
-                      <strong>Care Intructions : </strong>
+                      <strong>Care Instructions: </strong>
                       {selectedVariant?.detailsRef.careInstructions}
                     </li>
                   )}
 
                   {selectedVariant?.detailsRef.packaging && (
                     <li className="pt-3">
-                      <strong>Packaging : </strong>
+                      <strong>Packaging: </strong>
                       {selectedVariant?.detailsRef.packaging}
                     </li>
                   )}
-
                   <table className="my-5 table-md w-full">
                     <thead>
                       <tr className="border border-[#d6d6d6]">
@@ -516,30 +636,106 @@ function ProductDetail({ setCartOpen, setLogin }) {
                           {variants.map((v, index) => v?.detailsRef.metalTone)}
                         </td>
                       </tr>
-                      {selectedVariant?.detailsRef?.metalPurity != "" && (
-                        <tr>
-                          <td className="border border-[#d6d6d6] py-4">
-                            Metal Purity
-                          </td>
-                          <td className="border border-[#d6d6d6] text-start">
-                            {selectedVariant?.detailsRef.metalPurity?.map(
-                              (v, index) => (
-                                <span key={v?._id}>{v?.value},</span>
-                              )
-                            )}
-                          </td>
-                        </tr>
-                      )}
-                      {selectedVariant?.detailsRef.weight && (
-                        <tr>
-                          <td className="border border-[#d6d6d6] py-4">
-                            Weight
-                          </td>
-                          <td className="border border-[#d6d6d6]">
-                            {selectedVariant?.detailsRef.weight}
-                          </td>
-                        </tr>
-                      )}
+
+                      {selectedVariant?.detailsRef?.stoneType != "" &&
+                        selectedVariant?.detailsRef?.stoneType && (
+                          <tr>
+                            <td className="border border-[#d6d6d6] py-4">
+                              Stone Type
+                            </td>
+                            <td className="border border-[#d6d6d6] text-start">
+                              {selectedVariant?.detailsRef.stoneType}
+                            </td>
+                          </tr>
+                        )}
+
+                      {selectedVariant?.detailsRef?.diamondSize != "" &&
+                        selectedVariant?.detailsRef?.diamondSize && (
+                          <tr>
+                            <td className="border border-[#d6d6d6] py-4">
+                              Diamond Size
+                            </td>
+                            <td className="border border-[#d6d6d6] text-start">
+                              {selectedVariant?.detailsRef.diamondSize}
+                            </td>
+                          </tr>
+                        )}
+
+                      {selectedVariant?.detailsRef?.finish != "" &&
+                        selectedVariant?.detailsRef?.finish && (
+                          <tr>
+                            <td className="border border-[#d6d6d6] py-4">
+                              Finish
+                            </td>
+                            <td className="border border-[#d6d6d6] text-start">
+                              {selectedVariant?.detailsRef.finish}
+                            </td>
+                          </tr>
+                        )}
+
+                      {selectedVariant?.detailsRef.weight &&
+                        selectedVariant?.detailsRef.weight != "" && (
+                          <tr>
+                            <td className="border border-[#d6d6d6] py-4">
+                              Weight
+                            </td>
+                            <td className="border border-[#d6d6d6]">
+                              {selectedVariant?.detailsRef.weight}
+                            </td>
+                          </tr>
+                        )}
+
+                      {selectedVariant?.detailsRef?.centerStoneOptions
+                        ?.carats != "" &&
+                        selectedVariant?.detailsRef?.centerStoneOptions
+                          ?.carats && (
+                          <tr>
+                            <td className="border border-[#d6d6d6] py-4">
+                              Stone carat
+                            </td>
+                            <td className="border border-[#d6d6d6] text-start">
+                              {
+                                selectedVariant?.detailsRef?.centerStoneOptions
+                                  ?.carats
+                              }
+                            </td>
+                          </tr>
+                        )}
+
+                      {selectedVariant?.detailsRef?.centerStoneOptions
+                        ?.shapes != "" &&
+                        selectedVariant?.detailsRef?.centerStoneOptions
+                          ?.shapes && (
+                          <tr>
+                            <td className="border border-[#d6d6d6] py-4">
+                              Stone shape
+                            </td>
+                            <td className="border border-[#d6d6d6] text-start">
+                              {
+                                selectedVariant?.detailsRef?.centerStoneOptions
+                                  ?.shapes
+                              }
+                            </td>
+                          </tr>
+                        )}
+
+                      {selectedVariant?.detailsRef?.centerStoneOptions
+                        ?.qualities != "" &&
+                        selectedVariant?.detailsRef?.centerStoneOptions
+                          ?.qualities && (
+                          <tr>
+                            <td className="border border-[#d6d6d6] py-4">
+                              Stone quality
+                            </td>
+                            <td className="border border-[#d6d6d6] text-start">
+                              {
+                                selectedVariant?.detailsRef?.centerStoneOptions
+                                  ?.qualities
+                              }
+                            </td>
+                          </tr>
+                        )}
+
                       {selectedVariant?.detailsRef.hypoallergenic && (
                         <tr>
                           <td className="border border-[#d6d6d6] py-4">
@@ -552,6 +748,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                           </td>
                         </tr>
                       )}
+
                       <tr>
                         <td className="border border-[#d6d6d6] py-4">
                           hallmark
@@ -563,6 +760,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                             : "no"}
                         </td>
                       </tr>
+
                       <tr>
                         <td className="border border-[#d6d6d6] py-4">
                           jewellery certificate
@@ -573,6 +771,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                             : "no"}
                         </td>
                       </tr>
+
                       <tr>
                         <td className="border border-[#d6d6d6] py-4">SKU</td>
                         <td className="border border-[#d6d6d6]">
@@ -581,18 +780,6 @@ function ProductDetail({ setCartOpen, setLogin }) {
                       </tr>
                     </tbody>
                   </table>
-                </div>
-              </div>
-            )}
-
-            {selectedVariant?.moreDetail && (
-              <div className="collapse tracking-wider collapse-plus p-0  bg-base-100 border-[#d6d6d6]  border-b-1 rounded-none">
-                <input type="checkbox" id="moreDetail" />
-                <div className="px-0 collapse-title font-semibold ">
-                  More Details
-                </div>
-                <div className="px-0 collapse-content text-sm text-justify first-letter:capitalize">
-                  {selectedVariant?.moreDetail}
                 </div>
               </div>
             )}

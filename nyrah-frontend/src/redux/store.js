@@ -9,6 +9,8 @@ import orderReducer from "./slices/orderSlice"
 import materialReducer from "./slices/materialSlice"
 import instapostReducer from "./slices/instaPostSlice"
 import discountBannerReducer from "./slices/discountBannerSlice"
+import customizationReducer from "./slices/customizationSlice"
+import currencyReducer from "./slices/currencySlice"
 
 const store = configureStore({
     reducer:{
@@ -21,7 +23,9 @@ const store = configureStore({
         order: orderReducer,
         material: materialReducer,
         instapost: instapostReducer,
-        discountBanner: discountBannerReducer
+        discountBanner: discountBannerReducer,
+        customization: customizationReducer,
+        currency: currencyReducer
     }
 })
 

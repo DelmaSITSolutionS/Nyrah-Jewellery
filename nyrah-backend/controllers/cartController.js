@@ -42,6 +42,8 @@ exports.addToCart = catchAsyncErrors(async (req, res, next) => {
     customizations,
   });
 
+  console.log(customizationPrice)
+
   cartItem = await Cart.create({
     user: req.user._id,
     product: productId,
@@ -51,7 +53,7 @@ exports.addToCart = catchAsyncErrors(async (req, res, next) => {
     customizations,
     customizationKey,
     customizationPrice,
-    finalPrice,
+    finalPrice:customizationPrice!==0 ? customizationPrice:finalPrice,
   });
 
   res.status(201).json({

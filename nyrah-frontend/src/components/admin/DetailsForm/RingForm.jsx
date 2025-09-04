@@ -162,6 +162,57 @@ function RingForm({ initial = {}, onChange }) {
       ) : (
         <div className="skeleton h-12 w-full"></div>
       )}
+       <Controller
+        control={control}
+        name="metalPurity"
+        render={({ field }) =>
+          metalPurityOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Metal Purity"
+              options={metalPurityOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
+
+      <Controller
+        control={control}
+        name="stoneType"
+        render={({ field }) =>
+          stoneTypeOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Stone Type"
+              options={stoneTypeOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
+
+      {/* Multi-select fields remain the same */}
+      <Controller
+        control={control}
+        name="sizeOptions"
+        render={({ field }) =>
+          ringSizeOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Ring Sizes"
+              options={ringSizeOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
 
       {/* Diamond Size Selector */}
       {diamondSizes.length > 0 ? (
@@ -209,57 +260,9 @@ function RingForm({ initial = {}, onChange }) {
         <div className="skeleton h-12 w-full"></div>
       )}
 
-      {/* Multi-select fields remain the same */}
-      <Controller
-        control={control}
-        name="sizeOptions"
-        render={({ field }) =>
-          ringSizeOptions.length > 0 ? (
-            <MultiSelectDropdown
-              label="Ring Sizes"
-              options={ringSizeOptions}
-              selected={field.value}
-              onChange={field.onChange}
-            />
-          ) : (
-            <div className="skeleton h-24 w-full"></div>
-          )
-        }
-      />
+      
 
-      <Controller
-        control={control}
-        name="metalPurity"
-        render={({ field }) =>
-          metalPurityOptions.length > 0 ? (
-            <MultiSelectDropdown
-              label="Metal Purity"
-              options={metalPurityOptions}
-              selected={field.value}
-              onChange={field.onChange}
-            />
-          ) : (
-            <div className="skeleton h-24 w-full"></div>
-          )
-        }
-      />
-
-      <Controller
-        control={control}
-        name="stoneType"
-        render={({ field }) =>
-          stoneTypeOptions.length > 0 ? (
-            <MultiSelectDropdown
-              label="Stone Type"
-              options={stoneTypeOptions}
-              selected={field.value}
-              onChange={field.onChange}
-            />
-          ) : (
-            <div className="skeleton h-24 w-full"></div>
-          )
-        }
-      />
+     
 
       {/* Center Stone Options (single select) */}
       {stoneCaratOptions.length > 0 ? (

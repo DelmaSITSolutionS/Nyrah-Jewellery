@@ -6,8 +6,9 @@ import {
   createOption,
   deleteOption,
   getAllOptions,
+  updateOption,   // ✅ import update
 } from "../../redux/apis/optionApi";
-import { MdDelete } from "react-icons/md";
+import { MdDelete, MdEdit, MdCheck } from "react-icons/md";
 
 const optionKeys = [
   { label: "Ring Size", key: "ringSize", field: "size" },
@@ -24,6 +25,10 @@ function Size() {
   const [selectedKey, setSelectedKey] = useState("ringSize");
   const [input, setInput] = useState("");
 
+  // update state
+  const [editId, setEditId] = useState(null);
+  const [editValue, setEditValue] = useState("");
+
   /* grab slice */
   const slice = useSelector((s) => s.options);
   const { list, loading, error } = slice[selectedKey] || {};
@@ -33,14 +38,14 @@ function Size() {
 
   /* ── fetch on key change ─────────────────────────── */
   useEffect(() => {
-    dispatch(getAllOptions[selectedKey]()); // e.g. getAllOptions.ringSize()
+    dispatch(getAllOptions[selectedKey]());
   }, [dispatch, selectedKey]);
 
   /* ── add new value ──────────────────────────────── */
   const handleAdd = () => {
     if (!input.trim()) return toast.error("Value required");
 
-    dispatch(createOption[selectedKey](input)) // e.g. createOption.ringSize("7")
+    dispatch(createOption[selectedKey](input))
       .unwrap()
       .then(() => {
         toast.success(`${label} added`);
@@ -54,6 +59,26 @@ function Size() {
     dispatch(deleteOption[selectedKey](id))
       .unwrap()
       .then(() => toast.success("Deleted"))
+      .catch((err) => toast.error(err));
+  };
+
+  /* ── start editing ──────────────────────────────── */
+  const handleEdit = (item) => {
+    setEditId(item._id);
+    setEditValue(item[field]);
+  };
+
+  /* ── save update ───────────────────────────────── */
+  const handleUpdate = (id) => {
+    if (!editValue.trim()) return toast.error("Value required");
+
+    dispatch(updateOption[selectedKey]({ id, value: { [field]: editValue } }))
+      .unwrap()
+      .then(() => {
+        toast.success(`${label} updated`);
+        setEditId(null);
+        setEditValue("");
+      })
       .catch((err) => toast.error(err));
   };
 
@@ -119,17 +144,41 @@ function Size() {
               {list.map((item, idx) => (
                 <tr key={item._id}>
                   <td className="border border-zinc-300">{idx + 1}</td>
-                  <td className="border border-zinc-300">{item[field]}</td>
-                  <td className="border border-zinc-300">
-                    <div
-                      className="tooltip tooltip-left text-xl"
-                      data-tip="Delete"
-                    >
-                      <MdDelete
-                        className="me-3 cursor-pointer text-red-700"
-                        onClick={() => handleDelete(item._id)}
+
+                  {/* editable cell */}
+                  <td className="border border-zinc-300 py-0">
+                    {editId === item._id ? (
+                      <input
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="input w-full"
                       />
-                    </div>
+                    ) : (
+                      item[field]
+                    )}
+                  </td>
+
+                  {/* actions */}
+                  <td className="border border-zinc-300 flex gap-3">
+                    {editId === item._id ? (
+                      <MdCheck
+                        className="cursor-pointer text-green-700 text-xl"
+                        onClick={() => handleUpdate(item._id)}
+                        title="Save"
+                      />
+                    ) : (
+                      <MdEdit
+                        className="cursor-pointer text-blue-600 text-xl"
+                        onClick={() => handleEdit(item)}
+                        title="Edit"
+                      />
+                    )}
+
+                    <MdDelete
+                      className="cursor-pointer text-red-700 text-xl"
+                      onClick={() => handleDelete(item._id)}
+                      title="Delete"
+                    />
                   </td>
                 </tr>
               ))}

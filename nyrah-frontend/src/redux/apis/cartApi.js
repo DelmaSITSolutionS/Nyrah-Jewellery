@@ -31,7 +31,7 @@ export const fetchCart = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await axios.get("/cart");
-      return data.cart;              // array of cart items
+      return data;              // array of cart items
     } catch (err) {
       return rejectWithValue(
         err.response?.data?.message || "Failed to fetch cart"

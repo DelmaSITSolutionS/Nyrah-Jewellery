@@ -4,6 +4,7 @@ const {
   createMaterialMenu,
   addSubToMaterial,
   removeSubFromMaterial,
+  updateMaterial,
   getAllMaterials,
   deleteMaterial,
 } = require("../controllers/materialMenuController");
@@ -17,6 +18,9 @@ router.put("/admin/material/sub",isAuthenticatedUser,isAuthorizedRole("admin"), 
 
 // Remove a sub-material
 router.delete("/admin/material/sub",isAuthenticatedUser,isAuthorizedRole("admin"), removeSubFromMaterial);
+
+// update category
+router.patch("/admin/material/:id", isAuthenticatedUser, isAuthorizedRole("admin"), updateMaterial);
 
 // Get all material menus
 router.get("/materials", getAllMaterials);

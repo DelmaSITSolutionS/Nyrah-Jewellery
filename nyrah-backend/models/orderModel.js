@@ -23,6 +23,15 @@ const OrderSchema = new mongoose.Schema({
     },
   ],
 
+  symbol:{
+    type:String,
+    default:"₹"
+  },
+  currency:{
+    type:String,
+    default:"INR"
+  },
+
   shippingInfo: {
     name: String,
     street: String,

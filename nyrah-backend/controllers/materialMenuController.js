@@ -41,6 +41,53 @@ const addSubToMaterial = catchAsyncErrors(async (req, res, next) => {
   res.status(200).json({ success: true, material, message: "Subcategory added" });
 });
 
+const updateMaterial = catchAsyncErrors(async (req, res) => {
+  const { id } = req.params;
+  const { tag, sub } = req.body; // `sub` is now expected to be an object with `old` and `new`
+
+  const material = await MaterialMenu.findById(id);
+  if (!material) {
+    return res.status(404).json({ message: "MaterialMenu not found" });
+  }
+
+  // Update tag name
+  if (tag && tag.trim() !== material.tag) {
+    const exists = await MaterialMenu.findOne({ tag: tag.trim() });
+    if (exists) {
+      return res.status(400).json({
+        message: "Another material with this name already exists",
+      });
+    }
+    material.tag = tag.trim();
+  }
+
+  // Update a specific sub-material
+  if (sub && sub.old && sub.new) {
+    const oldTrimmed = sub.old.trim();
+    const newTrimmed = sub.new.trim();
+
+    const index = material.sub.findIndex(
+      (s) => s.toLowerCase() === oldTrimmed.toLowerCase()
+    );
+
+    if (index === -1) {
+      return res.status(400).json({
+        message: `Subcategory '${oldTrimmed}' not found`,
+      });
+    }
+
+    material.sub[index] = newTrimmed;
+  }
+
+  await material.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Material updated successfully",
+    material,
+  });
+});
+
 // Remove subcategory from a material menu
 const removeSubFromMaterial = catchAsyncErrors(async (req, res, next) => {
   const { tag, sub } = req.body;
@@ -80,6 +127,7 @@ module.exports = {
   createMaterialMenu,
   addSubToMaterial,
   removeSubFromMaterial,
+  updateMaterial,
   getAllMaterials,
   deleteMaterial,
 };

@@ -18,7 +18,7 @@ const generateProductCards = (items, orderId) => {
       }" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;" />
         <div>
           <div style="font-weight: 600;">${it.product.name}</div>
-          <div>₹${it.finalPrice.toLocaleString()} × ${it.quantity}</div>
+          <div>quantity : ${it.quantity}</div>
         </div>
       </div>
     </a>
@@ -27,20 +27,44 @@ const generateProductCards = (items, orderId) => {
     .join("");
 };
 
+async function updateStock(productId, quantity) {
+  const product = await Product.findOneAndUpdate(
+    { _id: productId, stock: { $gte: quantity } },
+    { $inc: { stock: -quantity } },
+    { new: true }
+  );
+
+  if (!product)
+    throw new ErrorHandler("Not enough stock available or product not found");
+}
+
 // GET /order/new
 exports.createOrderAfterPayment = catchAsyncErrors(async (req, res, next) => {
-  const { cartItems, shippingInfo, paymentInfo, totalAmount, charges } =
-    req.body;
+  const {
+    cartItems,
+    shippingInfo,
+    paymentInfo,
+    totalAmount,
+    charges,
+    symbol,
+    currency,
+  } = req.body;
 
   const order = await Order.create({
     user: req.user._id,
     items: cartItems,
+    symbol,
+    currency,
     shippingInfo,
     charges,
     paymentInfo,
     totalAmount,
     status: "Processing",
   });
+
+  for (let item of cartItems) {
+    await updateStock(item.product, item.quantity);
+  }
 
   // Email to USER
   const orderId = order._id.toString().slice(-6).toUpperCase();
@@ -54,7 +78,7 @@ exports.createOrderAfterPayment = catchAsyncErrors(async (req, res, next) => {
     html: `
       <h2>Thank you for your purchase!</h2>
       <p>Your order <strong>#${orderId}</strong> has been placed successfully.</p>
-      <p>Total Amount: ₹${totalAmount.toLocaleString()}</p>
+      <p>Total Amount: ${symbol} ${totalAmount.toLocaleString()}</p>
       <p>We will notify you when your order is shipped.</p>
       <hr />
       <h3>Order Summary:</h3>
@@ -73,7 +97,7 @@ exports.createOrderAfterPayment = catchAsyncErrors(async (req, res, next) => {
       <h2>New Order Received</h2>
       <p><strong>Order ID:</strong> ${orderId}</p>
       <p><strong>Customer:</strong> ${req.user.email}</p>
-      <p><strong>Total:</strong> ₹${totalAmount.toLocaleString()}</p>
+      <p><strong>Total:</strong> ${symbol} ${totalAmount.toLocaleString()}</p>
       <hr />
       <h3>Items:</h3>
       ${itemsHtml}
@@ -139,7 +163,7 @@ const buildItemCards = (items, orderId) =>
       }" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin-right:10px">
     <div>
       <div style="font-weight:600">${it.product.name}</div>
-      <div>₹${it.finalPrice.toLocaleString()} × ${it.quantity}</div>
+      <div>quantity : ${it.quantity}</div>
     </div>
   </div>
 </a>`

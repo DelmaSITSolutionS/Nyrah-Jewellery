@@ -249,6 +249,7 @@ function AdminProducts() {
               <th className="opacity-80">No.</th>
               <th className="opacity-80">Image</th>
               <th className="opacity-80">Name</th>
+              <th className="opacity-80">Stock</th>
               <th className="opacity-80">Product Group</th>
               <th className="opacity-80">Category</th>
               <th className="opacity-80 text-center">Actions</th>
@@ -276,6 +277,7 @@ function AdminProducts() {
                       />
                     </td>
                     <td>{group.name}</td>
+                    <td>{group.stock}</td>
                     <td>{group.productGroup}</td>
                     <td>{group.category.main}</td>
                     <td>

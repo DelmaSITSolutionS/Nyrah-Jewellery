@@ -61,3 +61,20 @@ export const deleteMaterial = createAsyncThunk("material/delete", async (tag, th
     return thunkAPI.rejectWithValue(err.response?.data?.message || err.message);
   }
 });
+
+// 🔽 6. Update a main material or its subcategories
+export const updateMaterial = createAsyncThunk(
+  "material/update",
+  async ({ id, tag, sub }, thunkAPI) => {
+    try {
+      const payload = { tag, sub };
+      const { data } = await API.patch(`/admin/material/${id}`, payload);
+      toast.success(data.message);
+      return data.material;
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message);
+      return thunkAPI.rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+

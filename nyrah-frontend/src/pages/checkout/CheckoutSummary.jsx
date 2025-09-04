@@ -1,4 +1,4 @@
-//  src/pages/checkout/CheckoutSummary.jsx
+// src/pages/checkout/CheckoutSummary.jsx
 import React, { useMemo, useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchCharges } from "../../redux/apis/chargesApi";
@@ -6,6 +6,8 @@ import AddressSection from "../../components/AddressSection";
 import RazorpayButton from "../../components/RazorpayButton";
 import { useLocation, useNavigate } from "react-router-dom";
 import API from "../../utils/axiosInstance";
+import currencyConverter from "../../utils/currencyConverter";
+import PaypalButton from "../../components/PaypalButton";
 
 export default function CheckoutSummary() {
   const dispatch = useDispatch();
@@ -14,25 +16,30 @@ export default function CheckoutSummary() {
   const { data: charges, loading: chargesLoading } = useSelector(
     (s) => s.charges
   );
+  const selectedCurrency = useSelector((s) => s.currency.selected);
+  const cartItems = useSelector((s) => s.cart?.items || []);
+  const user = useSelector((state) => state.user.user);
 
   const location = useLocation();
   const [buyNowItem, setBuyNowItem] = useState(null);
 
-  const user = useSelector((state) => state.user.user);
-  const address = user?.address;
-  const isAddressComplete =
-    address && Object.values(address).every((val) => val?.trim?.() !== "");
+  const [country, setCountry] = useState("India");
+  const [courier, setCourier] = useState("");
+  const [countries, setCountries] = useState(["India"]);
 
-  const cartItems = useSelector((s) => s.cart?.items || []);
-  const items = buyNowItem ? [buyNowItem] : cartItems;
+  const [extras, setExtras] = useState({
+    hallmarking: false,
+    specialRequest: false,
+    specialNote: "",
+  });
 
+  // ✅ Load buy-now item if needed
   useEffect(() => {
     const qp = new URLSearchParams(location.search);
     if (qp.get("buynow") === "true") {
       const item = JSON.parse(sessionStorage.getItem("buyNowItem"));
       if (item) {
         setBuyNowItem(item);
-        // 🔁 Fetch correct final price from server
         (async () => {
           try {
             const { data } = await API.post("/product/calculate-price", {
@@ -41,8 +48,6 @@ export default function CheckoutSummary() {
               detailsModel: item.detailsModel,
               customizations: item.customizations || {},
             });
-
-            // update with accurate price
             setBuyNowItem({
               ...item,
               finalPrice: data.finalPrice,
@@ -56,15 +61,9 @@ export default function CheckoutSummary() {
     }
   }, [location]);
 
-  /* ---------- fetch charges once ---------- */
   useEffect(() => {
     dispatch(fetchCharges());
   }, [dispatch]);
-
-  /* ---------- country / courier ---------- */
-  const [country, setCountry] = useState("India");
-  const [courier, setCourier] = useState("");
-  const [countries, setCountries] = useState(["India"]);
 
   useEffect(() => {
     (async () => {
@@ -75,20 +74,17 @@ export default function CheckoutSummary() {
         const json = await res.json();
         setCountries(json.map((c) => c.name.common).sort());
       } catch {
-        /* ignore – keep fallback */
+        /* ignore */
       }
     })();
   }, []);
 
-  /* ---------- extra services ---------- */
-  const [extras, setExtras] = useState({
-    hallmarking: false,
-    specialRequest: false,
-    specialNote: "",
-  });
+  const address = user?.address;
+  const isAddressComplete =
+    address && Object.values(address).every((val) => val?.trim?.() !== "");
 
-  /* ========== derived flags & totals  ========== */
-  /* engraving is automatic – any item carrying a non‑empty engraving string */
+  const items = buyNowItem ? [buyNowItem] : cartItems;
+
   const hasEngraving = useMemo(
     () =>
       items.some(
@@ -99,6 +95,7 @@ export default function CheckoutSummary() {
     [items]
   );
 
+  // ---- calculations ----
   const subtotal = useMemo(
     () => items.reduce((s, it) => s + it.finalPrice * it.quantity, 0),
     [items]
@@ -130,20 +127,95 @@ export default function CheckoutSummary() {
 
   const grandTotal = subtotal + gst + shipping + extraCharges;
 
-  /* loading fallback */
+  // ---- currency conversion state ----
+  const [converted, setConverted] = useState({
+    subtotal: null,
+    gst: null,
+    shipping: null,
+    extra: null,
+    grandTotal: null,
+    engraving: null,
+    hallmarking: null,
+    specialR: null,
+    items: {},
+  });
+
+  const symbol = selectedCurrency?.currencies
+    ? selectedCurrency.currencies[Object.keys(selectedCurrency.currencies)[0]]
+        .symbol
+    : "₹";
+
+  // ✅ convert all values
+  useEffect(() => {
+    let active = true;
+    const convertAll = async () => {
+      if (!selectedCurrency) return;
+      try {
+        const itemConversions = {};
+        await Promise.all(
+          items.map(async (it) => {
+            const convertedLine = await currencyConverter(
+              selectedCurrency,
+              it.finalPrice * it.quantity
+            );
+            itemConversions[it.product._id || it.productId] = convertedLine;
+          })
+        );
+
+        const [sub, g, sh, ex, gt, e,h,sr] = await Promise.all([
+          currencyConverter(selectedCurrency, subtotal),
+          currencyConverter(selectedCurrency, gst),
+          currencyConverter(selectedCurrency, shipping),
+          currencyConverter(selectedCurrency, extraCharges),
+          currencyConverter(selectedCurrency, grandTotal),
+          currencyConverter(selectedCurrency, charges.otherCharges?.engraving),
+          currencyConverter(selectedCurrency, charges.otherCharges?.hallmarking),
+          currencyConverter(selectedCurrency, charges.otherCharges?.specialRequestDefault)
+
+        ]);
+        if (active) {
+          setConverted({
+            subtotal: sub,
+            gst: g,
+            shipping: sh,
+            extra: ex,
+            grandTotal: gt,
+            items: itemConversions,
+            engraving: e,
+            hallmarking: h,
+            specialR: sr
+          });
+        }
+      } catch (err) {
+        console.error("Conversion failed:", err);
+      }
+    };
+    convertAll();
+    return () => {
+      active = false;
+    };
+  }, [
+    selectedCurrency,
+    items,
+    subtotal,
+    gst,
+    shipping,
+    extraCharges,
+    grandTotal
+  ]);
+
   if (chargesLoading || !charges) return <CheckoutSkeleton />;
 
-  /* ✅ No valid item to checkout – redirect */
   if (!buyNowItem && items.length === 0) {
     navigate("/shop");
     return null;
   }
 
-  /* ---------- render ---------- */
   return (
     <div className="flex flex-col md:flex-row justify-between gap-3 md:gap-10 px-4 md:px-6 lg:px-8 pt-[6rem] lg:pt-[9rem] max-w-6xl mx-auto pb-8 ">
-      {/* ② Items summary */}
+      {/* items + address + shipping left */}
       <div className="space-y-8">
+        {/* items */}
         <section>
           <h2 className="text-xl font-light font-cardo uppercase mb-3">
             Items
@@ -167,7 +239,6 @@ export default function CheckoutSummary() {
                     {it.product.category?.main}
                   </p>
 
-                  {/* customizations */}
                   {it.customizations && (
                     <ul className="mt-1 text-gray-600 space-y-0.5 font-cardo">
                       {Object.entries(it.customizations).map(([k, v]) => (
@@ -179,11 +250,14 @@ export default function CheckoutSummary() {
                     </ul>
                   )}
 
-                  <p className="mt-2 font-poppins">
-                    Qty {it.quantity} × ₹{it.finalPrice} ={" "}
-                    <strong>
-                      ₹{(it.finalPrice * it.quantity).toLocaleString()}
-                    </strong>
+                  <p className="mt-2 font-poppins flex justify-between">
+                    <span>
+                      Qty {it.quantity} × {symbol}{" "}
+                      {(
+                        converted.items[it.product._id || it.productId] ??
+                        it.finalPrice * it.quantity
+                      ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
                   </p>
                 </div>
               </article>
@@ -191,16 +265,13 @@ export default function CheckoutSummary() {
           </div>
         </section>
 
-        {/* ① Address block  */}
         <AddressSection />
 
-        {/* ③ Shipping options */}
         {charges.internationalShipping.length > 0 && (
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <select
               className="select select-bordered w-full"
               value={country}
-              autoComplete="false"
               id="country"
               onChange={(e) => {
                 setCountry(e.target.value);
@@ -232,12 +303,12 @@ export default function CheckoutSummary() {
         )}
       </div>
 
+      {/* right summary */}
       <div className="space-y-2 lg:w-[30%] max-h-[70vh] bg-base-200 p-3 flex flex-col justify-end">
-        {/* ④ Extra services */}
         <section className="space-y-3 font-cardo text-sm uppercase tracking-wider">
           {hasEngraving && (
             <p className="text-sm">
-              ✦ Engraving&nbsp;fee: ₹{charges.otherCharges.engraving}
+              ✦ Engraving fee: ₹{charges.otherCharges.engraving}
             </p>
           )}
 
@@ -264,7 +335,7 @@ export default function CheckoutSummary() {
                 setExtras((p) => ({ ...p, specialRequest: !p.specialRequest }))
               }
             />
-            Special&nbsp;request
+            Special request
           </label>
 
           {extras.specialRequest && (
@@ -280,49 +351,91 @@ export default function CheckoutSummary() {
           )}
         </section>
 
-        {/* ⑤ Cost breakdown */}
         <section className="border-t pt-4 font-poppins text-sm space-y-1">
-          <Row lbl="Subtotal" val={subtotal} />
           <Row
-            lbl={`GST (${(charges.gstRate * 100).toFixed(0)} %)`}
-            val={gst}
+            lbl="Subtotal"
+            val={converted.subtotal ?? subtotal}
+            symbol={symbol}
           />
-          <Row lbl="Shipping" val={shipping} />
+          <Row
+            lbl={`GST (${(charges.gstRate * 100).toFixed(0)} %)`}
+            val={converted.gst ?? gst}
+            symbol={symbol}
+          />
+          <Row
+            lbl="Shipping"
+            val={converted.shipping ?? shipping}
+            symbol={symbol}
+          />
           {hasEngraving && (
-            <Row lbl="Engraving" val={charges.otherCharges.engraving} />
+            <Row
+              lbl="Engraving"
+              val={converted.engraving ?? charges.otherCharges.engraving}
+              symbol={symbol}
+            />
           )}
           {extras.hallmarking && (
-            <Row lbl="Hallmarking" val={charges.otherCharges.hallmarking} />
+            <Row
+              lbl="Hallmarking"
+              val={converted.hallmarking ?? charges.otherCharges.hallmarking}
+              symbol={symbol}
+            />
           )}
           {extras.specialRequest && (
             <Row
               lbl="Special Request"
-              val={charges.otherCharges.specialRequestDefault}
+              val={
+                converted.specialR ?? charges.otherCharges.specialRequestDefault
+              }
+              symbol={symbol}
             />
           )}
-
-          <Row lbl="Total" val={grandTotal} bold />
+          <Row
+            lbl="Total"
+            val={converted.grandTotal ?? grandTotal}
+            bold
+            symbol={symbol}
+          />
         </section>
 
-        {/* ⑥ CTA */}
         {isAddressComplete ? (
-          <RazorpayButton
-            grandTotal={grandTotal}
-            charges={{
-              gst,
-              shipping,
-              engraving: hasEngraving
-                ? charges?.otherCharges?.engraving ?? 0
-                : 0,
-              hallmarking: extras.hallmarking
-                ? charges?.otherCharges?.hallmarking ?? 0
-                : 0,
-              specialRequest: extras.specialRequest
-                ? charges?.otherCharges?.specialRequestDefault ?? 0
-                : 0,
-            }}
-            buyNowItem={buyNowItem}
-          />
+          selectedCurrency?.cca2 === "IN" ? (
+            <RazorpayButton
+              grandTotal={grandTotal}
+              charges={{
+                gst,
+                shipping,
+                engraving: hasEngraving
+                  ? charges?.otherCharges?.engraving ?? 0
+                  : 0,
+                hallmarking: extras.hallmarking
+                  ? charges?.otherCharges?.hallmarking ?? 0
+                  : 0,
+                specialRequest: extras.specialRequest
+                  ? charges?.otherCharges?.specialRequestDefault ?? 0
+                  : 0,
+              }}
+              buyNowItem={buyNowItem}
+            />
+          ) : (
+            <PaypalButton
+              grandTotal={converted.grandTotal}
+              charges={{
+                gst,
+                shipping,
+                engraving: hasEngraving
+                  ? charges?.otherCharges?.engraving ?? 0
+                  : 0,
+                hallmarking: extras.hallmarking
+                  ? charges?.otherCharges?.hallmarking ?? 0
+                  : 0,
+                specialRequest: extras.specialRequest
+                  ? charges?.otherCharges?.specialRequestDefault ?? 0
+                  : 0,
+              }}
+              buyNowItem={buyNowItem}
+            />
+          )
         ) : (
           <p className="text-red-500 font-medium text-center mt-4">
             Please complete your shipping address above to proceed with
@@ -334,57 +447,21 @@ export default function CheckoutSummary() {
   );
 }
 
-/* helper row component */
-const Row = ({ lbl, val, bold }) => (
-  <div className={`flex justify-between tracking-wide ${bold && "font-semibold"}`}>
+const Row = ({ lbl, val, bold, symbol }) => (
+  <div
+    className={`flex justify-between tracking-wide ${bold && "font-semibold"}`}
+  >
     <span>{lbl}</span>
-    <span>₹ {val.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+    <span>
+      {symbol} {val?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+    </span>
   </div>
 );
 
 const CheckoutSkeleton = () => (
   <div className="px-4 md:px-6 lg:px-8 pt-[6rem] md:pt-[9rem] max-w-6xl mx-auto pb-8 space-y-8 animate-pulse">
-    {/* Items */}
-    <section className="space-y-3">
-      <div className="h-5 bg-gray-300 rounded w-24" />
-      {[1, 2].map((_, i) => (
-        <div key={i} className="flex gap-4 border p-4 bg-gray-100">
-          <div className="w-20 h-20 bg-gray-300 rounded" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 bg-gray-300 w-3/4 rounded" />
-            <div className="h-3 bg-gray-200 w-1/2 rounded" />
-            <div className="h-3 bg-gray-200 w-2/3 rounded" />
-          </div>
-        </div>
-      ))}
-    </section>
-
-    {/* Address */}
-    <section className="space-y-2">
-      <div className="h-4 bg-gray-300 w-1/3 rounded" />
-      <div className="h-10 bg-gray-200 rounded" />
-    </section>
-
-    {/* Selects */}
-    <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="h-12 bg-gray-200 rounded" />
-      <div className="h-12 bg-gray-200 rounded" />
-    </section>
-
-    {/* Extras */}
-    <section className="space-y-2">
-      <div className="h-4 bg-gray-300 w-1/4 rounded" />
-      <div className="h-4 bg-gray-300 w-2/4 rounded" />
-    </section>
-
-    {/* Totals */}
-    <section className="space-y-2">
-      {[1, 2, 3].map((_, i) => (
-        <div key={i} className="h-4 bg-gray-200 w-full rounded" />
-      ))}
-    </section>
-
-    {/* Button */}
-    <div className="h-12 bg-gray-300 rounded w-full" />
+    <div className="h-6 bg-gray-300 rounded w-1/3"></div>
+    <div className="h-24 bg-gray-300 rounded"></div>
+    <div className="h-24 bg-gray-300 rounded"></div>
   </div>
 );

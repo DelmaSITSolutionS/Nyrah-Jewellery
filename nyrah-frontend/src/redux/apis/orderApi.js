@@ -4,11 +4,13 @@ import API from "../../utils/axiosInstance";
 // 🚀 Create Order After Payment
 export const createOrder = createAsyncThunk(
   "order/create",
-  async ({ cartItems, shippingInfo, paymentInfo,charges,totalAmount }, thunkAPI) => {
+  async ({ cartItems, shippingInfo, paymentInfo,charges,totalAmount,symbol,currency }, thunkAPI) => {
     try {
-        console.log(totalAmount)
+      
       const { data } = await API.post("/order/new", {
         cartItems,
+        symbol,
+        currency,
         shippingInfo,
         paymentInfo,
         charges,

@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { endpoints, getAllOptions, createOption, deleteOption } from "../apis/optionApi";
+import { endpoints, getAllOptions, createOption, deleteOption, updateOption } from "../apis/optionApi";
 
 const initial = {};
 Object.keys(endpoints).forEach((key) => {
@@ -44,6 +44,25 @@ const optionsSlice = createSlice({
           state[key].loading = false;
           state[key].error = payload;
         });
+
+         // UPDATE ✅
+    builder
+      .addCase(updateOption[key].fulfilled, (state, { payload }) => {
+        const { key, option } = payload;
+        const index = state[key].list.findIndex((item) => item._id === option._id);
+        if (index !== -1) {
+          state[key].list[index] = option; // overwrite with updated object
+        }
+        state[key].loading = false;
+      })
+      .addCase(updateOption[key].pending, (state) => {
+        state[key].loading = true;
+        state[key].error = null;
+      })
+      .addCase(updateOption[key].rejected, (state, { payload }) => {
+        state[key].loading = false;
+        state[key].error = payload;
+      });
 
       // DELETE
       builder

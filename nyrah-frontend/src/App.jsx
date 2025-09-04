@@ -69,6 +69,7 @@ const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
 
 import { FaWhatsapp } from "react-icons/fa";
 import CancellationPolicy from "./pages/lifetimeUpgradePolicy/CancellationPolicy";
+import Customization from "./pages/admin/Customization";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -77,6 +78,9 @@ export default function App() {
   const [login, setLogin] = useState(false);
   const isAdminRoute = location.pathname.startsWith("/admin");
   const [cartOpen, setCartOpen] = useState(false);
+
+  // const [selected, setSelected] = useState(null);
+
 
   useEffect(() => {}, [dispatch]);
 
@@ -106,13 +110,13 @@ export default function App() {
         transition={Flip}
       />
 
-      {/* <a
+      <a
         href="https://wa.me/9197335271778"
         className="fixed bottom-4 right-4 rounded-full p-3 bg-[#000000] text-[#ffffff] text-4xl z-[98]"
         target="_blank"
       >
         <FaWhatsapp />
-      </a> */}
+      </a>
 
       {!isAdminRoute && (
         <Navbar login={login} setLogin={setLogin} setCartOpen={setCartOpen} />
@@ -129,10 +133,7 @@ export default function App() {
           <Route path="/diamond-education" element={<DiamondEducation />} />
           <Route path="/faqs" element={<Faq />} />
           <Route path="/about" element={<About />} />
-          <Route
-            path="/cancellation-policy"
-            element={<CancellationPolicy />}
-          />
+          <Route path="/cancellation-policy" element={<CancellationPolicy />} />
           <Route path="/refund-return" element={<RefundAndReturnPolicy />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/shipping-policy" element={<ShippingPolicy />} />
@@ -170,6 +171,7 @@ export default function App() {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="products" element={<AdminProducts />} />
+              <Route path="customization" element={<Customization />} />
               <Route path="orders" element={<Orders />} />
               <Route
                 path="/admin/order/:id"

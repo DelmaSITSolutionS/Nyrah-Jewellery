@@ -7,8 +7,9 @@ import {
   createOption,
   deleteOption,
   getAllOptions,
+  updateOption,
 } from "../../redux/apis/optionApi";
-import { MdDelete } from "react-icons/md";
+import { MdCheck, MdDelete, MdEdit } from "react-icons/md";
 
 const optionKeys = [
   { label: "Metal Tone", key: "metalTone", field: "name", isImage: true },
@@ -25,8 +26,13 @@ const optionKeys = [
 function Feature() {
   const dispatch = useDispatch();
   const [selectedKey, setSelectedKey] = useState("metalTone");
-  const [input, setInput] = useState("".toLocaleLowerCase());
+  const [input, setInput] = useState("");
   const [file, setFile] = useState(null);
+
+  // For inline update
+  const [editId, setEditId] = useState(null);
+  const [editValue, setEditValue] = useState("");
+  const [editFile, setEditFile] = useState(null);
 
   /* grab slice */
   const slice = useSelector((s) => s.options);
@@ -38,7 +44,7 @@ function Feature() {
 
   /* ── fetch on key change ─────────────────────────── */
   useEffect(() => {
-    dispatch(getAllOptions[selectedKey]()); // e.g. getAllOptions.ringSize()
+    dispatch(getAllOptions[selectedKey]());
   }, [dispatch, selectedKey]);
 
   /* ── add new value ──────────────────────────────── */
@@ -50,19 +56,19 @@ function Feature() {
     if (isImage) {
       if (!file) return toast.error("Select image");
       const formData = new FormData();
-      formData.append("name", input.toLowerCase()); // name is expected for metalTone
+      formData.append("name", input.toLowerCase());
       formData.append("image", file);
       value = formData;
     } else {
       value = input.toLowerCase();
     }
 
-    dispatch(createOption[selectedKey](value)) // e.g. createOption.ringSize("7")
+    dispatch(createOption[selectedKey](value))
       .unwrap()
       .then(() => {
         toast.success(`${label} added`);
         setInput("");
-        setFile();
+        setFile(null);
       })
       .catch((err) => toast.error(err));
   };
@@ -75,13 +81,44 @@ function Feature() {
       .catch((err) => toast.error(err));
   };
 
+  /* ── update value ───────────────────────────────── */
+  const handleUpdate = (item) => {
+    if (isImage) {
+      const formData = new FormData();
+      formData.append("name", editValue || item[field]);
+      if (editFile) formData.append("image", editFile); // only update if new file chosen
+      dispatch(updateOption[selectedKey]({ id: item._id, value: formData }))
+        .unwrap()
+        .then(() => {
+          toast.success("Updated");
+          setEditId(null);
+          setEditValue("");
+          setEditFile(null);
+        })
+        .catch((err) => toast.error(err));
+    } else {
+      dispatch(
+        updateOption[selectedKey]({
+          id: item._id,
+          value: { [field]: editValue || item[field] },
+        })
+      )
+        .unwrap()
+        .then(() => {
+          toast.success("Updated");
+          setEditId(null);
+          setEditValue("");
+        })
+        .catch((err) => toast.error(err));
+    }
+  };
+
   // handle image change
-  const handleImageChange = (e) => {
+  const handleImageChange = (e, forEdit = false) => {
     const selectedFile = e.target.files[0];
     if (selectedFile && selectedFile.type.startsWith("image/")) {
-      setFile(selectedFile); // ✅ store actual File object
+      forEdit ? setEditFile(selectedFile) : setFile(selectedFile);
     } else {
-      setFile(null);
       toast.error("Invalid image");
     }
   };
@@ -108,28 +145,33 @@ function Feature() {
           </select>
         </div>
 
+        {/* Add new */}
         <div className="flex gap-3 items-center">
-          {selectedKey === "metalTone" &&<label htmlFor="image">
-            {file ? (
-              <div className="avatar flex justify-center">
-                <div className=" ring-offset-base-100 w-8 h-8 rounded-full ring-1 ring-zinc-400 ring-offset-2 ">
-                  <img src={URL.createObjectURL(file)} />
+          {selectedKey === "metalTone" && (
+            <label htmlFor="image">
+              {file ? (
+                <div className="avatar flex justify-center">
+                  <div className="w-8 h-8 rounded-full ring-1 ring-zinc-400 ring-offset-2 ">
+                    <img src={URL.createObjectURL(file)} alt="preview" />
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="border rounded-full p-2 border-zinc-400 text-zinc-400">
-                <AiOutlinePlus />
-              </div>
-            )}
-          </label>}
+              ) : (
+                <div className="border rounded-full p-2 border-zinc-400 text-zinc-400">
+                  <AiOutlinePlus />
+                </div>
+              )}
+            </label>
+          )}
 
-          {selectedKey === "metalTone" &&<input
-            id="image"
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="file-input file-input-bordered file-input-sm w-full max-w-xs h-10"
-          />}
+          {selectedKey === "metalTone" && (
+            <input
+              id="image"
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleImageChange(e)}
+              className="hidden"
+            />
+          )}
 
           <input
             value={input}
@@ -170,26 +212,69 @@ function Feature() {
               {list.map((item, idx) => (
                 <tr key={item._id}>
                   <td className="border border-zinc-300">{idx + 1}</td>
-                  <td className="border border-zinc-300 capitalize">
-                    {item["image"] && (
-                      <div className="avatar me-3">
-                        <div className=" ring-offset-base-100 w-6 h-6 rounded-full ring-1 ring-zinc-400 ring-offset-2 ">
-                          <img src={item["image"]} />
-                        </div>
+                  <td className="border border-zinc-300 capitalize py-0">
+                    {editId === item._id ? (
+                      <div className="flex items-center gap-2">
+                        {isImage && (
+                          <>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleImageChange(e, true)}
+                            />
+                            <div className="avatar">
+                              <div className="w-6 h-6 rounded-full ring-1 ring-zinc-400 ring-offset-2 ">
+                                <img
+                                  src={
+                                    editFile
+                                      ? URL.createObjectURL(editFile)
+                                      : item.image
+                                  }
+                                  alt="preview"
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        <input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          placeholder={item[field]}
+                          className="input input-bordered input-sm"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {item.image && (
+                          <div className="avatar">
+                            <div className="w-6 h-6 rounded-full ring-1 ring-zinc-400 ring-offset-2 ">
+                              <img src={item.image} alt="tone" />
+                            </div>
+                          </div>
+                        )}
+                        {item[field]}
                       </div>
                     )}
-                    {item[field]}
                   </td>
-                  <td className="border border-zinc-300">
-                    <div
-                      className="tooltip tooltip-left text-xl"
-                      data-tip="Delete"
-                    >
-                      <MdDelete
-                        className="me-3 cursor-pointer text-red-700"
-                        onClick={() => handleDelete(item._id)}
+                  <td className="border border-zinc-300 flex gap-2 items-center">
+                    {editId === item._id ? (
+                      <MdCheck
+                        className="cursor-pointer text-green-600 text-xl"
+                        onClick={() => handleUpdate(item)}
                       />
-                    </div>
+                    ) : (
+                      <MdEdit
+                        className="cursor-pointer text-blue-600 text-xl"
+                        onClick={() => {
+                          setEditId(item._id);
+                          setEditValue(item[field]);
+                        }}
+                      />
+                    )}
+                    <MdDelete
+                      className="cursor-pointer text-red-700 text-xl"
+                      onClick={() => handleDelete(item._id)}
+                    />
                   </td>
                 </tr>
               ))}

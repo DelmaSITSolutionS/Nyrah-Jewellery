@@ -64,7 +64,7 @@ export default function UserOrders() {
 
           <div className="text-sm text-gray-700">
             <strong>{order.items.length}</strong> item(s) – Total:{" "}
-            <strong>₹{order.totalAmount.toLocaleString()}</strong> – Status:{" "}
+            <strong>{order.symbol}{order.totalAmount.toLocaleString()}</strong> – Status:{" "}
             <strong>{order.status}</strong>
           </div>
 

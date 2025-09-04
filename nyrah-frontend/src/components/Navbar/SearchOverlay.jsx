@@ -47,7 +47,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
-            className="relative z-10 w-full max-h-screen overflow-y-scroll  mx-auto "
+            className="relative z-10 w-full max-h-screen   mx-auto "
             style={{ scrollbarWidth: "none" }}
           >
             {/* Search Bar */}
@@ -59,7 +59,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
                 placeholder="Search for products, tags or categories"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="flex-1  outline-none text-sm "
+                className="flex-1  outline-none text-sm bg-[#fff8f0]"
                 style={{ paddingRight: "40px", border: "none" }}
               />
               <button className="absolute right-7" onClick={onClose}>

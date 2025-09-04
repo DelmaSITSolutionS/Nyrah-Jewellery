@@ -4,6 +4,7 @@ import {
   createNewMaterial,
   addNewSubMaterial,
   removeSubMaterial,
+  updateMaterial,
   deleteMaterial,
 } from "../apis/materialApi";
 
@@ -37,7 +38,9 @@ const materialSlice = createSlice({
 
       // 3. Add Sub Material
       .addCase(addNewSubMaterial.fulfilled, (state, action) => {
-        const index = state.materials.findIndex(m => m.tag === action.payload.tag);
+        const index = state.materials.findIndex(
+          (m) => m.tag === action.payload.tag
+        );
         if (index !== -1) {
           state.materials[index] = action.payload;
         }
@@ -45,7 +48,9 @@ const materialSlice = createSlice({
 
       // 4. Remove Sub Material
       .addCase(removeSubMaterial.fulfilled, (state, action) => {
-        const index = state.materials.findIndex(m => m.tag === action.payload.tag);
+        const index = state.materials.findIndex(
+          (m) => m.tag === action.payload.tag
+        );
         if (index !== -1) {
           state.materials[index] = action.payload;
         }
@@ -53,7 +58,19 @@ const materialSlice = createSlice({
 
       // 5. Delete Material
       .addCase(deleteMaterial.fulfilled, (state, action) => {
-        state.materials = state.materials.filter(m => m.tag !== action.payload);
+        state.materials = state.materials.filter(
+          (m) => m.tag !== action.payload
+        );
+      })
+
+      // 6. update
+      .addCase(updateMaterial.fulfilled, (state, action) => {
+        const index = state.materials.findIndex(
+          (m) => m._id === action.payload._id
+        );
+        if (index !== -1) {
+          state.materials[index] = action.payload;
+        }
       });
   },
 });
