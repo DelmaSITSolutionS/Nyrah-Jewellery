@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,7 @@ import { CiFileOn } from "react-icons/ci";
 import { getAllOptions } from "../../redux/apis/optionApi";
 import {
   getProductGroupVariants,
-  getProductsByMain,
+  getProductsByMaterialTag,
 } from "../../redux/apis/productApi";
 import { addToCart, fetchCart } from "../../redux/apis/cartApi";
 
@@ -38,6 +38,12 @@ import masterCard from "../../assets/payment/masterCard.png";
 import mastero from "../../assets/payment/mastero.png";
 import paypal from "../../assets/payment/paypal.png";
 import { FaWhatsapp } from "react-icons/fa6";
+import optimizeImage from "../../utils/optimizedImage";
+import CustomBracelet from "./modelDetails/CustomBracelet";
+import { clearCustomizationData } from "../../redux/slices/customizationSlice";
+import CustomEarring from "./modelDetails/CustomEarring";
+import CustomNecklace from "./modelDetails/CustomNecklace";
+import CustomPendant from "./modelDetails/CustomPendant";
 
 function calculateCustomizationPrice(customizations) {
   if (!customizations) return 0;
@@ -52,97 +58,96 @@ function calculateCustomizationPrice(customizations) {
 }
 
 function ProductDetail({ setCartOpen, setLogin }) {
-  const { groupname } = useParams();
+  const { id } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const [variants, setVariants] = useState([]);
-  const [category, setCategory] = useState("ring");
-  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [product, setProduct] = useState(null);
   const [activeMedia, setActiveMedia] = useState(null);
   const [customizations, setCustomizations] = useState({});
   const [quantity, setQuantity] = useState(1);
   const [showGuide, setShowGuide] = useState(false);
   const [productPrice, setProductPrice] = useState(null);
-  const [custom, setCustom] = useState(false);
+  const [isCustomTab, setIsCustomTab] = useState(false);
   const { isAuthenticated } = useSelector((state) => state.user);
 
-  const navigate = useNavigate();
-
-  const featureSlice = useSelector((s) => s.options);
-  const { list: metalTones = [] } = featureSlice["metalTone"] || {};
-
+  const { list: metalTones = [] } =
+    useSelector((s) => s.options)["metalTone"] || {};
   const { list: products } = useSelector((state) => state.product);
-  const [customizationPrice, setCustomizationPrice] = useState(0);
-
   const selectedCurrency = useSelector((state) => state.currency.selected);
+
   const symbol = selectedCurrency?.currencies
-    ? selectedCurrency.currencies[Object.keys(selectedCurrency.currencies)[0]]
+    ? selectedCurrency?.currencies[Object.keys(selectedCurrency?.currencies)[0]]
         .symbol
     : "₹";
 
-  const basePrice = Number(selectedVariant?.price) || 0;
+  const basePrice = Number(product?.price) || 0;
+  const customizationPrice = calculateCustomizationPrice(customizations);
+  const finalPrice = basePrice + customizationPrice;
 
   useEffect(() => {
     let isMounted = true;
     const convertPrice = async () => {
-      let converted;
-      if (!basePrice) return;
-
-      if (customizationPrice !== 0) {
-        converted = await currencyConverter(
-          selectedCurrency,
-          Number(customizationPrice)
-        );
-      } else {
-        converted = await currencyConverter(
-          selectedCurrency,
-          Number(basePrice)
-        );
+      if (!finalPrice) {
+        setProductPrice(0);
+        return;
       }
-
+      const converted = await currencyConverter(selectedCurrency, finalPrice);
       if (isMounted) setProductPrice(converted);
     };
     convertPrice();
     return () => {
       isMounted = false;
     };
-  }, [selectedCurrency, basePrice, customizationPrice]);
+  }, [selectedCurrency, finalPrice]);
 
   useEffect(() => {
-    const fetchVariants = async () => {
-      // setCustomizations({})
-      const data = await dispatch(
-        getProductGroupVariants({ groupId: groupname })
-      ).unwrap();
+    setIsCustomTab(false); // Always default back to the "Ready Available" tab.
+    setCustomizations({}); // Clear any previous selections.
+    setProduct(null); // Clear the old product to ensure the loader shows.
+    setQuantity(1); // Reset quantity back to 1.
 
-      const firstVariant = data.variants.filter((v,i)=> v.material.tag === "gold");
-      
-      // setCustomizations({
-      //   metalPurity: firstVariant?.detailsRef?.metalPurity[0],
-      //   stoneType: firstVariant?.detailsRef?.stoneType[0],
-      // });
-      setVariants(data.variants);
-      setSelectedVariant(firstVariant[0]);
-      setCategory(firstVariant?.category?.main);
-      const initialMedia = [
-        ...(data.variants[0]?.images || []),
-        data.variants[0]?.video,
-      ].filter(Boolean);
-      setActiveMedia(initialMedia[0]); // set default media
+    // Clear the stale customization data from the Redux store
+    dispatch(clearCustomizationData());
+
+    const fetchProductAndSetDefaults = async () => {
+      const result = await dispatch(getProductGroupVariants({ id })).unwrap();
+      if (result.product) {
+        const fetchedProduct = result.product;
+        setProduct(fetchedProduct);
+        setActiveMedia(
+          [...(fetchedProduct.images || []), fetchedProduct.video].filter(
+            Boolean
+          )[0]
+        );
+
+        const initialCustomizations = {
+          metalTone: fetchedProduct.detailsRef?.metalTone?.[0] || null,
+          metalPurity: {
+            value: fetchedProduct.detailsRef?.metalPurity?.[0] || null,
+            price: 0,
+          },
+          stoneType: {
+            value: fetchedProduct.detailsRef?.stoneType?.[0] || null,
+            price: 0,
+          },
+        };
+        setCustomizations(initialCustomizations);
+      }
     };
 
     dispatch(getAllOptions["metalTone"]?.());
-
-    fetchVariants();
-  }, [groupname, custom]);
-
-  console.log(customizations)
+    fetchProductAndSetDefaults();
+  }, [id, dispatch]);
 
   useEffect(() => {
-    setCustomizationPrice(calculateCustomizationPrice(customizations));
-  }, [customizations]);
+    if (product?.material?.tag) {
+      dispatch(getProductsByMaterialTag({ tag: product.material.tag }));
+    }
+  }, [product?.material?.tag, dispatch]);
 
   const handleAddToCart = async () => {
+    // This function's internal logic remains unchanged
     if (!isAuthenticated) {
       setCartOpen(false);
       setLogin(true);
@@ -150,14 +155,47 @@ function ProductDetail({ setCartOpen, setLogin }) {
       return;
     }
 
-    if (selectedVariant.stock === 0) {
+    if (
+      !customizations.chainLength &&
+      product.category.main === "pendant" &&
+      product?.detailsRef?.chainLength?.length > 0
+    ) {
+      toast.error("Please select chain length");
+      return;
+    }
+
+    if (
+      !customizations.chainLengths &&
+      product.category.main === "necklace" &&
+      product?.detailsRef?.chainLengths?.length > 0
+    ) {
+      toast.error("Please select chain length");
+      return;
+    }
+
+    if (
+      (product?.detailsRef?.sizeOptions?.length > 0 &&
+        !Object.hasOwn(customizations, "sizeOptions")) ||
+      (product?.detailsRef?.sizes?.length > 0 &&
+        !Object.hasOwn(customizations, "sizes")) ||
+      (product?.detailsRef?.earringSize?.length > 0 &&
+        !Object.hasOwn(customizations, "earringSize")) ||
+      (product?.detailsRef?.pendantSize?.length > 0 &&
+        !Object.hasOwn(customizations, "pendantSize"))
+    ) {
+      toast.error(`Please select ${product.category.main} size`);
+      return;
+    }
+
+    if (product.stock === 0) {
       toast.error("Out of stock");
       return;
     }
+
     const payload = {
-      productId: selectedVariant._id,
-      detailsRef: selectedVariant.detailsRef._id,
-      detailsModel: selectedVariant.detailsModel, // e.g., "ring", "pendant"
+      productId: product._id,
+      detailsRef: product.detailsRef._id,
+      detailsModel: product.detailsModel, // e.g., "ring", "pendant"
       quantity,
       customizations,
     };
@@ -174,6 +212,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
   };
 
   const handleBuyNow = () => {
+    // This function's internal logic remains unchanged
     if (!isAuthenticated) {
       setCartOpen(false);
       setLogin(true);
@@ -181,65 +220,91 @@ function ProductDetail({ setCartOpen, setLogin }) {
       return;
     }
 
-    if (selectedVariant.stock === 0) {
+    if (
+      !customizations.chainLengths &&
+      product.category.main === "necklace" &&
+      product?.detailsRef?.chainLengths?.length > 0
+    ) {
+      toast.error("Please select chain length");
+      return;
+    }
+
+    if (
+      (product?.detailsRef?.sizeOptions?.length > 0 &&
+        !Object.hasOwn(customizations, "sizeOptions")) ||
+      (product?.detailsRef?.sizes?.length > 0 &&
+        !Object.hasOwn(customizations, "sizes")) ||
+      (product?.detailsRef?.earringSize?.length > 0 &&
+        !Object.hasOwn(customizations, "earringSize")) ||
+      (product?.detailsRef?.pendantSize?.length > 0 &&
+        !Object.hasOwn(customizations, "pendantSize"))
+    ) {
+      toast.error(`Please select ${product.category.main} size`);
+      return;
+    }
+
+    if (product.stock === 0) {
       toast.error("Out of stock");
       return;
     }
+
     const payload = {
-      productId: selectedVariant._id,
-      detailsRef: selectedVariant.detailsRef._id,
-      detailsModel: selectedVariant.detailsModel,
+      productId: product._id,
+      detailsRef: product.detailsRef._id,
+      detailsModel: product.detailsModel,
       quantity,
       customizations,
-      product: selectedVariant,
+      product: product,
     };
 
     sessionStorage.setItem("buyNowItem", JSON.stringify(payload));
-    navigate("/checkout?buynow=true"); // ← React Router navigation
+    navigate("/checkout?buynow=true");
   };
 
-  useEffect(() => {
-    dispatch(getProductsByMain({ mainCategory: category }));
-  }, [category]);
-
   const handleToneChange = (toneName) => {
-    const matching = variants.find((v) => v.detailsRef.metalTone === toneName);
-    if (matching) {
-      setSelectedVariant(matching);
+    setCustomizations((prev) => ({
+      ...prev,
+      metalTone: toneName,
+    }));
+  };
 
-      const newMedia = [...(matching.images || []), matching.video].filter(
-        Boolean
-      );
-      setActiveMedia(newMedia[0]); // update media on tone change
+  const handleCustomizationChange = useCallback((updates) => {
+    setCustomizations((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const handleTabChange = (isCustom) => {
+    setIsCustomTab(isCustom);
+    if (isCustom) {
+      // When switching TO custom, clear the state
+      setCustomizations({});
+    } else {
+      // When switching BACK to "Ready Available", re-apply the product's defaults
+      if (product) {
+        setCustomizations({
+          metalTone: product.detailsRef?.metalTone?.[0] || null,
+          metalPurity: {
+            value: product.detailsRef?.metalPurity?.[0] || null,
+            price: 0,
+          },
+          stoneType: {
+            value: product.detailsRef?.stoneType?.[0] || null,
+            price: 0,
+          },
+        });
+      }
     }
   };
 
   const isVideo = (url) =>
     typeof url === "string" && (url.endsWith(".mp4") || url.includes("video"));
 
-  if (!selectedVariant) return <Loader />;
+  if (!product) return <Loader />;
 
-  const mediaItems = [
-    ...(selectedVariant.images || []),
-    selectedVariant.video,
-  ].filter(Boolean);
+  const mediaItems = [...(product?.images || []), product?.video].filter(
+    Boolean
+  );
 
-  const formatDescription = (text) => {
-    if (!text) return { intro: "", points: [] };
-
-    // Split by "✨ Details:" if exists
-    const [intro, details] = text.split("✨ Details:").map((t) => t.trim());
-
-    // Convert details into points using commas or newlines
-    const points = details
-      ? details
-          .split(/[\n,•]+/)
-          .map((d) => d.trim())
-          .filter(Boolean)
-      : [];
-
-    return { intro, points };
-  };
+  console.log(customizations);
 
   return (
     <div className="pt-[6rem] lg:pt-[9rem] pb-10 px-[1rem] sm:px-[3rem] ">
@@ -247,13 +312,12 @@ function ProductDetail({ setCartOpen, setLogin }) {
         {/* LEFT SIDE: MEDIA VIEWER */}
         <div className="self-start md:sticky md:top-[6rem] lg:top-[9rem] ">
           <div className="flex flex-col-reverse lg:justify-end lg:flex-row gap-3 md:max-h-[100vh]">
-            {/* Thumbnail Gallery */}
             <div className="pt-3 lg:pt-0 flex lg:flex-col gap-2 overflow-x-auto">
               {mediaItems.map((item, idx) => (
                 <div
                   key={idx}
                   onClick={() => setActiveMedia(item)}
-                  className={`cursor-pointer  aspect-square border-2 rounded-md ${
+                  className={`cursor-pointer aspect-square border-2 rounded-md ${
                     item === activeMedia
                       ? "border-[#443627]"
                       : "border-transparent"
@@ -268,6 +332,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                   ) : (
                     <img
                       src={item}
+                      loading="lazy"
                       className="w-15 h-15 aspect-square object-cover rounded"
                       alt={`thumb-${idx}`}
                     />
@@ -275,8 +340,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                 </div>
               ))}
             </div>
-            {/* Main Preview */}
-            <div className="w-full lg:w-[90%]  rounded  overflow-hidden aspect-square ">
+            <div className="w-full lg:w-[90%] rounded overflow-hidden aspect-square ">
               {isVideo(activeMedia) ? (
                 <video
                   autoPlay
@@ -286,7 +350,8 @@ function ProductDetail({ setCartOpen, setLogin }) {
                 />
               ) : (
                 <img
-                  src={activeMedia}
+                  src={optimizeImage(activeMedia, 1200, "auto:best")}
+                  loading="lazy"
                   alt="Product preview"
                   className="w-full h-full object-cover aspect-square"
                 />
@@ -295,13 +360,12 @@ function ProductDetail({ setCartOpen, setLogin }) {
           </div>
         </div>
 
-        {/* RIGHT SIDE: (to be implemented next) */}
+        {/* RIGHT SIDE: PRODUCT INFO */}
         <div className="font-cardo space-y-4">
           <div className="p-5 border-[1px] rounded-md border-[#dddddd]">
-            <h1 className="text-2xl pb-0 uppercase  font-[300] text-[black]  tracking-wide">
-              {selectedVariant.name}
+            <h1 className="text-2xl pb-0 uppercase font-[300] text-[black] tracking-wide">
+              {product.name}
             </h1>
-
             <div className="flex justify-start pb-3">
               {[...Array(5)].map((_, i) => {
                 const value = i + 1;
@@ -310,22 +374,18 @@ function ProductDetail({ setCartOpen, setLogin }) {
                     key={i}
                     size={14}
                     className="cursor-pointer transition-colors"
-                    color={
-                      value <= selectedVariant.rating ? "#facc15" : "#e5e7eb"
-                    }
+                    color={value <= product.rating ? "#facc15" : "#e5e7eb"}
                   />
                 );
               })}
             </div>
-
             <p className=" capitalize pb-3 text-sm text-[#C19A6B]">
               <span className="font-[500] font-poppins tracking-wider text-[#4A4A4A]">
-                stock :{" "}
+                stock :
               </span>
-              {selectedVariant?.stock === 0 ? "Out of stock" : "In stock"}
+              {product?.stock === 0 ? "Out of stock" : "In stock"}
             </p>
-
-            <p className="text-xl font-poppins pb-3  font-medium flex flex-col gap-0.1">
+            <p className="text-xl font-poppins pb-3 font-medium flex flex-col gap-0.1">
               {productPrice !== null ? (
                 <span>
                   {symbol} {productPrice.toLocaleString()}
@@ -337,54 +397,45 @@ function ProductDetail({ setCartOpen, setLogin }) {
                 (MRP Inclusive of all taxes)
               </span>
             </p>
-
             <p className="uppercase tracking-wider font-poppins text-[.9rem] mb-6 font-[400]">
               <span className="font-cardo tracking-widest font-semibold text-[#4A4A4A]">
-                SKU :{" "}
+                SKU :
               </span>
-              {selectedVariant?.productGroup}
+              {product?.productGroup}
             </p>
-
             <div
               className={`${
-                selectedVariant?.detailsRef?.metalTone === ""
-                  ? "hidden"
-                  : "flex"
+                product?.detailsRef?.metalTone === "" ? "hidden" : "flex"
               } flex-wrap flex-col text-[.9rem] items-start gap-2 `}
             >
               <p className="font-bold text-[#4A4A4A] uppercase tracking-wider">
                 Metal Tone :
                 <span className=" ms-1 font-cardo text-[.9rem] tracking-wider font-medium capitalize">
-                  {selectedVariant?.detailsRef.metalTone}
+                  {customizations?.metalTone}
                 </span>
               </p>
               <div className="flex gap-2">
-                {variants.map((v, idx) => (
+                {product?.detailsRef?.metalTone?.map((v, idx) => (
                   <div key={idx}>
                     <button
-                      onClick={() => handleToneChange(v.detailsRef.metalTone)}
-                      className={`p-1 rounded-full  text-sm transition cursor-pointer ${
-                        selectedVariant?.detailsRef.metalTone ===
-                        v.detailsRef.metalTone
+                      onClick={() => handleToneChange(v)}
+                      className={`p-1 rounded-full text-sm transition cursor-pointer ${
+                        v === customizations?.metalTone
                           ? "border border-dashed border-[#443627] text-white"
                           : "bg-white text-[#443627] border-[#443627] hover:text-white"
                       }`}
                     >
                       {metalTones.map((tone) => {
-                        // show this tone only if a variant exists in that tone
-                        const matchingVariant =
-                          v.detailsRef.metalTone === tone.name;
-
+                        const matchingVariant = v === tone.name;
                         if (!matchingVariant) return null;
-
                         return (
                           <div
                             key={tone._id || tone.name}
-                            className="w-7 h-7  rounded-full "
+                            className="w-7 h-7 rounded-full "
                             title={tone.name}
                           >
                             <img
-                              src={tone.image} // the tone’s own image
+                              src={tone.image}
                               alt={tone.name}
                               className="w-full h-full rounded-full object-cover"
                             />
@@ -397,114 +448,118 @@ function ProductDetail({ setCartOpen, setLogin }) {
               </div>
             </div>
           </div>
-
-          <div className="py-5  space-y-4 rounded-md  ]">
+          <div className="py-5 space-y-4 rounded-md ]">
             <button
               onClick={() => setShowGuide(true)}
-              className=" capitalize text underline underline-offset-2 cursor-pointer opacity-80 hover:opacity-100 flex items-center justify-start gap-1 font-light text-[#443627] w-full   text-[.9rem]"
+              className=" capitalize text underline underline-offset-2 cursor-pointer opacity-80 hover:opacity-100 flex items-center justify-start gap-1 font-light text-[#443627] w-full text-[.9rem]"
             >
               <CiFileOn className="text-sm" />
-              {selectedVariant?.category.main} Size Guide
+              {product?.category.main} Size Guide
             </button>
-
-            {/* Modal */}
             {showGuide && (
               <CategoryGuideModal
-                category={selectedVariant.category.main}
+                category={product.category.main}
                 onClose={() => setShowGuide(false)}
               />
             )}
-
-            {/* Category-specific Detail Form */}
-            <div className="tabs tabs-lift">
-              <input
-                type="radio"
-                name="my_tabs_3"
-                className="tab  font-poppins text-[.75rem] [--tab-border-color:#cccccc] tracking-wide"
-                aria-label="Ready Available"
-                defaultChecked
-                onChange={() => setCustom((prev) => !prev)}
-              />
-              <div className="tab-content border-[#cccccc] bg-base-100 py-6 px-4">
-                {selectedVariant.category?.main === "ring" && (
-                  <RingDetail
-                    detailData={selectedVariant.detailsRef}
-                    selectedCustomizations={customizations}
-                    onChange={setCustomizations}
-                  />
-                )}
-
-                {selectedVariant.category?.main === "bracelet" && (
-                  <BraceletDetail
-                    detailData={selectedVariant.detailsRef}
-                    selectedCustomizations={customizations}
-                    onChange={setCustomizations}
-                  />
-                )}
-
-                {selectedVariant.category?.main === "necklace" && (
-                  <NecklaceDetail
-                    detailData={selectedVariant.detailsRef}
-                    selectedCustomizations={customizations}
-                    onChange={setCustomizations}
-                  />
-                )}
-
-                {selectedVariant.category?.main === "earring" && (
-                  <EarringDetail
-                    detailData={selectedVariant.detailsRef}
-                    selectedCustomizations={customizations}
-                    onChange={setCustomizations}
-                  />
-                )}
-
-                {selectedVariant.category?.main === "pendant" && (
-                  <PendantDetail
-                    detailData={selectedVariant.detailsRef}
-                    selectedCustomizations={customizations}
-                    onChange={setCustomizations}
-                  />
-                )}
-              </div>
-
-              <input
-                type="radio"
-                name="my_tabs_3"
-                className="tab font-poppins text-[.75rem] [--tab-border-color:#cccccc] tracking-wide"
-                aria-label="Customization"
-                disabled={
-                  selectedVariant.category?.main !== "ring"
-                    ? true
-                    : selectedVariant.material?.tag !== "gold"
-                }
-                onChange={() => setCustom((prev) => !prev)}
-              />
-              <div className="tab-content bg-base-100 border-[#cccccc] py-6 px-4">
-                {selectedVariant.category?.main === "ring" && (
-                  <CustomRing
-                    detailData={groupname}
-                    selectedCustomizations={customizations}
-                    onChange={setCustomizations}
-                  />
-                )}
-                <div className="flex justify-between items-center gap-3 my-3">
-                  <hr className="w-full text-[#cccccc]" />
-                  <span className="text-xs text-[#676767]">OR</span>
-                  <hr className="w-full text-[#cccccc]" />
+            {product && (
+              <div className="tabs tabs-lift">
+                <input
+                  type="radio"
+                  name="my_tabs_3"
+                  className="tab font-poppins text-[.75rem] [--tab-border-color:#cccccc] tracking-wide"
+                  aria-label="Ready Available"
+                  checked={!isCustomTab}
+                  onChange={() => handleTabChange(false)}
+                />
+                <div className="tab-content border-[#cccccc] bg-base-100 py-6 px-4">
+                  {!isCustomTab && product.category?.main === "ring" && (
+                    <RingDetail
+                      detailData={product.detailsRef}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
+                  {!isCustomTab && product.category?.main === "bracelet" && (
+                    <BraceletDetail
+                      detailData={product.detailsRef}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
+                  {!isCustomTab && product.category?.main === "necklace" && (
+                    <NecklaceDetail
+                      detailData={product.detailsRef}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
+                  {!isCustomTab && product.category?.main === "earring" && (
+                    <EarringDetail
+                      detailData={product.detailsRef}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
+                  {!isCustomTab && product.category?.main === "pendant" && (
+                    <PendantDetail
+                      detailData={product.detailsRef}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
                 </div>
-                <a
-                  href="https://wa.me/9197335271778"
-                  target="_blank"
-                  className="flex justify-center gap-2 text-sm p-2 text-[green] items-center"
-                >
-                  <FaWhatsapp /> <span>Make an Enquiry</span>
-                </a>
-              </div>
-            </div>
-          </div>
+                <input
+                  type="radio"
+                  name="my_tabs_3"
+                  className="tab font-poppins text-[.75rem] [--tab-border-color:#cccccc] tracking-wide"
+                  aria-label="Customization"
+                  checked={isCustomTab}
+                  disabled={product.material?.tag !== "gold"}
+                  onChange={() => handleTabChange(true)}
+                />
+                <div className="tab-content bg-base-100 border-[#cccccc] py-6 px-4">
+                  {isCustomTab && product.category?.main === "ring" && (
+                    <CustomRing
+                      productGroup={product?.productGroup}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
+                  {isCustomTab && product.category?.main === "bracelet" && (
+                    <CustomBracelet
+                      productGroup={product?.productGroup}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
 
+                   {isCustomTab && product.category?.main === "earring" && (
+                    <CustomEarring
+                      productGroup={product?.productGroup}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
+                   {isCustomTab && product.category?.main === "necklace" && (
+                    <CustomNecklace
+                      productGroup={product?.productGroup}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
+                  {isCustomTab && product.category?.main === "pendant" && (
+                    <CustomPendant
+                      productGroup={product?.productGroup}
+                      selectedCustomizations={customizations}
+                      onChange={handleCustomizationChange}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <div className=" space-y-4">
-            {/* Quantity Selector */}
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               <span className="font-bold text-sm tracking-wider uppercase ">
                 Quantity:
@@ -522,13 +577,12 @@ function ProductDetail({ setCartOpen, setLogin }) {
                   <span className="px-4 font-poppins">{quantity}</span>
                   <button
                     className="px-3 py-1 cursor-pointer text-lg hover:bg-gray-100"
-                    disabled={quantity > selectedVariant?.stock}
+                    disabled={quantity > product?.stock}
                     onClick={() => setQuantity((prev) => prev + 1)}
                   >
                     +
                   </button>
                 </div>
-                {/* Add to Cart Button */}
                 <button
                   className="relative group border overflow-hidden z-2 hover:text-white font-semibold border-[#443627] w-full tooltip tooltip-right text-[#443627] uppercase text-sm tracking-wider py-2 rounded transition justify-center flex items-center gap-2 px-2 cursor-pointer"
                   onClick={() => handleAddToCart()}
@@ -539,8 +593,6 @@ function ProductDetail({ setCartOpen, setLogin }) {
                 </button>
               </div>
             </div>
-
-            {/* Buy It Now Button */}
             <button
               className="w-full flex items-center justify-center gap-2 rounded font-poppins uppercase tracking-wider text-sm font-[400] text-[#ffffff] cursor-pointer bg-[#9b6500] hover:bg-[#000000] py-2 transition"
               onClick={() => handleBuyNow()}
@@ -548,8 +600,6 @@ function ProductDetail({ setCartOpen, setLogin }) {
               <PiHandbagLight className="text-lg" />
               Buy Now
             </button>
-
-            {/* payment icons  */}
             <div className="flex justify-center gap-1">
               <img src={visa} alt="visa" />
               <img src={masterCard} alt="masterCard" />
@@ -557,10 +607,9 @@ function ProductDetail({ setCartOpen, setLogin }) {
               <img src={paypal} alt="paypal" />
             </div>
           </div>
-
           <div>
             <div className="grid grid-cols-4 my-4 p-4 rounded-2xl bg-gray-100 w-full justify-between items-center">
-              <div className="flex flex-col gap-1 items-center text-sm lg:text-lg  text-center">
+              <div className="flex flex-col gap-1 items-center text-sm lg:text-lg text-center">
                 <img className="w-8 lg:w-14" src={easyReturn} alt="" />
                 <p>Easy Return</p>
               </div>
@@ -577,174 +626,153 @@ function ProductDetail({ setCartOpen, setLogin }) {
                 <p>Maintenance</p>
               </div>
             </div>
-
-            {selectedVariant?.shortDescription && (
+            {product?.shortDescription && (
               <div className="collapse tracking-wider collapse-plus p-0 bg-base-100 border-[#d6d6d6] border-t-1 border-b-1 rounded-none mt-3">
                 <input type="checkbox" id="description" />
                 <div className="px-0 collapse-title font-semibold">
                   Description
                 </div>
                 <div className="px-0 collapse-content text-sm text-justify first-letter:capitalize">
-                  {(() => {
-                    const { intro, points } = formatDescription(
-                      selectedVariant.shortDescription
-                    );
-
-                    return (
-                      <>
-                        <p className="pb-2">{intro}</p>
-
-                        {points.length > 0 && (
-                          <ul className="list-disc list-inside pl-5 space-y-1">
-                            {points.map((point, idx) => (
-                              <li key={idx}>{point}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </>
-                    );
-                  })()}
-
-                  {selectedVariant?.detailsRef.careInstructions && (
+                  <pre className="text-sm font-cardo text-wrap">
+                    {product?.shortDescription}
+                  </pre>
+                  {product?.detailsRef?.careInstructions && (
                     <li className="pt-3">
                       <strong>Care Instructions: </strong>
-                      {selectedVariant?.detailsRef.careInstructions}
+                      {product?.detailsRef.careInstructions}
                     </li>
                   )}
-
-                  {selectedVariant?.detailsRef.packaging && (
+                  {product?.detailsRef?.packaging && (
                     <li className="pt-3">
                       <strong>Packaging: </strong>
-                      {selectedVariant?.detailsRef.packaging}
+                      {product?.detailsRef.packaging}
                     </li>
                   )}
                   <table className="my-5 table-md w-full">
                     <thead>
                       <tr className="border border-[#d6d6d6]">
                         <th className="uppercase text-[.8rem] font-semibold tracking-wider text-black">
-                          {selectedVariant?.category?.main} Details
+                          {product?.category?.main}
+                          Details
                         </th>
                         <th></th>
                       </tr>
                     </thead>
+
                     <tbody className="text-gray-800 tracking-wider capitalize">
                       <tr>
                         <td className="border border-[#d6d6d6] py-4">
                           Metal Tone
                         </td>
+
                         <td className="border border-[#d6d6d6]">
-                          {variants.map((v, index) => v?.detailsRef.metalTone)}
+                          {customizations?.metalTone}
                         </td>
                       </tr>
 
-                      {selectedVariant?.detailsRef?.stoneType != "" &&
-                        selectedVariant?.detailsRef?.stoneType && (
+                      {product?.detailsRef?.stoneType != "" &&
+                        product?.detailsRef?.stoneType && (
                           <tr>
                             <td className="border border-[#d6d6d6] py-4">
                               Stone Type
                             </td>
+
                             <td className="border border-[#d6d6d6] text-start">
-                              {selectedVariant?.detailsRef.stoneType}
+                              {product?.detailsRef.stoneType}
                             </td>
                           </tr>
                         )}
 
-                      {selectedVariant?.detailsRef?.diamondSize != "" &&
-                        selectedVariant?.detailsRef?.diamondSize && (
+                      {product?.detailsRef?.diamondSize != "" &&
+                        product?.detailsRef?.diamondSize && (
                           <tr>
                             <td className="border border-[#d6d6d6] py-4">
                               Diamond Size
                             </td>
+
                             <td className="border border-[#d6d6d6] text-start">
-                              {selectedVariant?.detailsRef.diamondSize}
+                              {product?.detailsRef.diamondSize}
                             </td>
                           </tr>
                         )}
 
-                      {selectedVariant?.detailsRef?.finish != "" &&
-                        selectedVariant?.detailsRef?.finish && (
+                      {product?.detailsRef?.finish != "" &&
+                        product?.detailsRef?.finish && (
                           <tr>
                             <td className="border border-[#d6d6d6] py-4">
                               Finish
                             </td>
+
                             <td className="border border-[#d6d6d6] text-start">
-                              {selectedVariant?.detailsRef.finish}
+                              {product?.detailsRef.finish}
                             </td>
                           </tr>
                         )}
 
-                      {selectedVariant?.detailsRef.weight &&
-                        selectedVariant?.detailsRef.weight != "" && (
+                      {product?.detailsRef.weight &&
+                        product?.detailsRef.weight != "" && (
                           <tr>
                             <td className="border border-[#d6d6d6] py-4">
                               Weight
                             </td>
+
                             <td className="border border-[#d6d6d6]">
-                              {selectedVariant?.detailsRef.weight}
+                              {product?.detailsRef.weight}
                             </td>
                           </tr>
                         )}
 
-                      {selectedVariant?.detailsRef?.centerStoneOptions
-                        ?.carats != "" &&
-                        selectedVariant?.detailsRef?.centerStoneOptions
-                          ?.carats && (
+                      {product?.detailsRef?.centerStoneOptions?.carats != "" &&
+                        product?.detailsRef?.centerStoneOptions?.carats && (
                           <tr>
                             <td className="border border-[#d6d6d6] py-4">
                               Stone carat
                             </td>
+
                             <td className="border border-[#d6d6d6] text-start">
-                              {
-                                selectedVariant?.detailsRef?.centerStoneOptions
-                                  ?.carats
-                              }
+                              {product?.detailsRef?.centerStoneOptions?.carats}
                             </td>
                           </tr>
                         )}
 
-                      {selectedVariant?.detailsRef?.centerStoneOptions
-                        ?.shapes != "" &&
-                        selectedVariant?.detailsRef?.centerStoneOptions
-                          ?.shapes && (
+                      {product?.detailsRef?.centerStoneOptions?.shapes != "" &&
+                        product?.detailsRef?.centerStoneOptions?.shapes && (
                           <tr>
                             <td className="border border-[#d6d6d6] py-4">
                               Stone shape
                             </td>
+
                             <td className="border border-[#d6d6d6] text-start">
-                              {
-                                selectedVariant?.detailsRef?.centerStoneOptions
-                                  ?.shapes
-                              }
+                              {product?.detailsRef?.centerStoneOptions?.shapes}
                             </td>
                           </tr>
                         )}
 
-                      {selectedVariant?.detailsRef?.centerStoneOptions
-                        ?.qualities != "" &&
-                        selectedVariant?.detailsRef?.centerStoneOptions
-                          ?.qualities && (
+                      {product?.detailsRef?.centerStoneOptions?.qualities !=
+                        "" &&
+                        product?.detailsRef?.centerStoneOptions?.qualities && (
                           <tr>
                             <td className="border border-[#d6d6d6] py-4">
                               Stone quality
                             </td>
+
                             <td className="border border-[#d6d6d6] text-start">
                               {
-                                selectedVariant?.detailsRef?.centerStoneOptions
+                                product?.detailsRef?.centerStoneOptions
                                   ?.qualities
                               }
                             </td>
                           </tr>
                         )}
 
-                      {selectedVariant?.detailsRef.hypoallergenic && (
+                      {product?.detailsRef.hypoallergenic && (
                         <tr>
                           <td className="border border-[#d6d6d6] py-4">
                             hypoallergenic
                           </td>
+
                           <td className="border border-[#d6d6d6]">
-                            {selectedVariant?.detailsRef.hypoallergenic
-                              ? "yes"
-                              : "no"}
+                            {product?.detailsRef.hypoallergenic ? "yes" : "no"}
                           </td>
                         </tr>
                       )}
@@ -753,9 +781,9 @@ function ProductDetail({ setCartOpen, setLogin }) {
                         <td className="border border-[#d6d6d6] py-4">
                           hallmark
                         </td>
+
                         <td className="border border-[#d6d6d6]">
-                          {selectedVariant?.detailsRef.certification
-                            .isHallmarked
+                          {product?.detailsRef.certification.isHallmarked
                             ? "yes"
                             : "no"}
                         </td>
@@ -765,17 +793,19 @@ function ProductDetail({ setCartOpen, setLogin }) {
                         <td className="border border-[#d6d6d6] py-4">
                           jewellery certificate
                         </td>
+
                         <td className="border border-[#d6d6d6]">
-                          {selectedVariant?.detailsRef.certification.isCertified
-                            ? selectedVariant?.detailsRef.certification.certType
+                          {product?.detailsRef.certification.isCertified
+                            ? product?.detailsRef.certification.certType
                             : "no"}
                         </td>
                       </tr>
 
                       <tr>
                         <td className="border border-[#d6d6d6] py-4">SKU</td>
+
                         <td className="border border-[#d6d6d6]">
-                          {selectedVariant?.productGroup}
+                          {product?.productGroup}
                         </td>
                       </tr>
                     </tbody>
@@ -783,19 +813,24 @@ function ProductDetail({ setCartOpen, setLogin }) {
                 </div>
               </div>
             )}
-
-            {selectedVariant?.detailsRef.shippingNote && (
-              <div className="collapse tracking-wider collapse-plus p-0  bg-base-100 border-[#d6d6d6]  border-b-1 rounded-none">
+            {product?.detailsRef.shippingNote && (
+              <div className="collapse tracking-wider collapse-plus p-0  bg-base-100 border-[#d6d6d6]  border-b-1 rounded-none">
                 <input type="checkbox" id="shippingInfo" />
+
                 <div className="px-0 collapse-title font-semibold ">
                   Shipping Policy
                 </div>
+
                 <div className="px-0 collapse-content text-sm text-justify first-letter:capitalize">
-                  {selectedVariant?.detailsRef.shippingNote}
-                  {selectedVariant?.detailsRef.deliveryTime && (
+                  <pre className="font-cardo text-wrap">
+                    {product?.detailsRef.shippingNote}
+                  </pre>
+
+                  {product?.detailsRef.deliveryTime && (
                     <li className="pt-3">
                       <strong>Delivery Time : </strong>
-                      {selectedVariant?.detailsRef.deliveryTime}
+
+                      {product?.detailsRef.deliveryTime}
                     </li>
                   )}
                 </div>
@@ -804,15 +839,11 @@ function ProductDetail({ setCartOpen, setLogin }) {
           </div>
         </div>
       </div>
-
-      {/* reting and review  */}
       <div className="border py-4 border-[#dddddd]">
-        <ReviewSection productId={selectedVariant?._id} />
+        <ReviewSection productId={product?._id} />
       </div>
-
-      {/* Similer products */}
       <div className="py-4">
-        <h2 className="md:text-xl  tracking-wide font-cardo font-[500] py-3">
+        <h2 className="md:text-xl tracking-wide font-cardo font-[500] py-3">
           Explore Similar
         </h2>
         <SwiperCard products={products} slidesPerView={4} />

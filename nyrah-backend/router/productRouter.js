@@ -4,7 +4,6 @@ const {
   getFirstProductsInGroups,
   getProductsByMainCategory,
   getProductsBySubCategory,
-  getProductsByGroup,
   updateProductVariant,
   deleteProductVariant,
   calculateFinalPriceForClient,
@@ -14,6 +13,7 @@ const {
   getProductsByMaterialTag,
   getTopRatedProducts,
   getLowStockProducts,
+  getProductById,
 } = require("../controllers/productController");
 const { productMediaUpload } = require("../middleware/upload");
 const { isAuthenticatedUser, isAuthorizedRole } = require("../middleware/auth");
@@ -24,7 +24,7 @@ const router = express.Router();
 router.get("/products", getFirstProductsInGroups);
 router.get("/products/:mainCategory/:subCategory", getProductsBySubCategory);
 router.get("/products/:mainCategory", getProductsByMainCategory);
-router.get("/product/group/:productGroup", getProductsByGroup);
+router.get("/product/group/:id", getProductById);
 router.post("/product/calculate-price", calculateFinalPriceForClient);
 router.get("/search", getSearchedProducts);
 router.get("/suggestions", getSearchSuggestions);

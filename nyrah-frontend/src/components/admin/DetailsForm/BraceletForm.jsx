@@ -8,25 +8,28 @@ import isEqual from "lodash.isequal";
 function BraceletForm({ initial = {}, onChange }) {
   const dispatch = useDispatch();
   const { control, watch, setValue, register, reset } = useForm({
-    defaultValues: useMemo(() => ({
-      sizeOptions: [],
-      metalPurity: [],
-      metalTone: "",
-      stoneType: [],
-      finish: "", // Changed to a single value
-      customization: {
-        engravingAvailable: false,
-      },
-      certification: {
-        isCertified: false,
-        certType: "",
-        isHallmarked: false,
-      },
-      weight: "",
-      careInstructions: "Avoid harsh chemicals, store in dry pouch",
-      shippingNote: "Free shipping in India. Worldwide delivery",
-      deliveryTime: "5–7 days (regular), 15–20 days (custom orders)",
-    }), []),
+    defaultValues: useMemo(
+      () => ({
+        sizeOptions: [],
+        metalPurity: [],
+        metalTone: [],
+        stoneType: [],
+        finish: "", // Changed to a single value
+        customization: {
+          engravingAvailable: false,
+        },
+        certification: {
+          isCertified: false,
+          certType: "",
+          isHallmarked: false,
+        },
+        weight: "",
+        careInstructions: "Avoid harsh chemicals, store in dry pouch",
+        shippingNote: "Free shipping in India. Worldwide delivery",
+        deliveryTime: "5–7 days (regular), 15–20 days (custom orders)",
+      }),
+      []
+    ),
   });
 
   const featureSlice = useSelector((s) => s.options);
@@ -37,6 +40,7 @@ function BraceletForm({ initial = {}, onChange }) {
   const { list: finishes = [] } = featureSlice["finish"] || {};
 
   const braceletSizeOptions = braceletSizes.map((s) => s.braceletSize);
+  const metalToneOptions = metalTones.map((t) => t.name);
   const metalPurityOptions = metalPurities.map((p) => p.name);
   const stoneTypeOptions = stoneTypes.map((st) => st.type);
   const finishOptions = finishes.map((f) => f.finish);
@@ -50,16 +54,16 @@ function BraceletForm({ initial = {}, onChange }) {
   }, [dispatch]);
 
   // Set default values for single-select fields once their data is loaded
-  useEffect(() => {
-    if (metalTones.length > 0) {
-      const initialTone = initial?.metalTone;
-      if (initialTone && metalTones.some((t) => t.name === initialTone)) {
-        setValue("metalTone", initialTone);
-      } else if (metalTones.length > 0) {
-        setValue("metalTone", metalTones[0].name);
-      }
-    }
-  }, [metalTones, initial, setValue]);
+  // useEffect(() => {
+  //   if (metalTones.length > 0) {
+  //     const initialTone = initial?.metalTone;
+  //     if (initialTone && metalTones.some((t) => t.name === initialTone)) {
+  //       setValue("metalTone", initialTone);
+  //     } else if (metalTones.length > 0) {
+  //       setValue("metalTone", metalTones[0].name);
+  //     }
+  //   }
+  // }, [metalTones, initial, setValue]);
 
   useEffect(() => {
     if (finishes.length > 0 && initial?.finish) {
@@ -88,7 +92,8 @@ function BraceletForm({ initial = {}, onChange }) {
       reset({
         ...initial,
         customization: {
-          engravingAvailable: initial.customization?.engravingAvailable || false,
+          engravingAvailable:
+            initial.customization?.engravingAvailable || false,
         },
         certification: {
           isCertified: initial.certification?.isCertified || false,
@@ -110,29 +115,23 @@ function BraceletForm({ initial = {}, onChange }) {
     <div className="mt-6 space-y-4 border-t pt-6">
       <h3 className="text-lg font-semibold">Bracelet Details</h3>
 
-     
-
       {/* Metal Tone Selector */}
-      {metalTones.length > 0 ? (
-        <div>
-          <label htmlFor="metalTone" className="label pb-3">
-            Metal Tone :
-          </label>
-          <select
-            id="metalTone"
-            {...register("metalTone")}
-            className="input input-bordered w-full select"
-          >
-            {metalTones.map((t) => (
-              <option className="capitalize" key={t._id} value={t.name}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : (
-        <div className="skeleton h-12 w-full"></div>
-      )}
+      <Controller
+        control={control}
+        name="metalTone"
+        render={({ field }) =>
+          metalToneOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Metal Tone"
+              options={metalToneOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
 
       <Controller
         control={control}
@@ -168,7 +167,7 @@ function BraceletForm({ initial = {}, onChange }) {
         }
       />
 
-       {/* Multi-select fields remain the same */}
+      {/* Multi-select fields remain the same */}
       <Controller
         control={control}
         name="sizeOptions"

@@ -13,7 +13,7 @@ function PendantForm({ initial = {}, onChange }) {
         chainIncluded: false,
         chainLength: [],
         metalPurity: [],
-        metalTone: "",
+        metalTone: [],
         stoneType: [],
         stoneCarat: "",
         pendantSize: [],
@@ -48,11 +48,12 @@ function PendantForm({ initial = {}, onChange }) {
   const { list: finishTypes = [] } = featureSlice["finish"] || {};
   const { list: occasions = [] } = featureSlice["occasion"] || {};
 
+  const metalToneOptions = metalTones.map((m) => m.name);
   const chainLengthOptions = chainLengths.map((c) => c.length);
   const metalPurityOptions = metalPurities.map((p) => p.name);
   const stoneTypeOptions = stoneTypes.map((st) => st.type);
   const stoneCaratOptions = stoneCarats.map((sc) => sc.carat);
-  const pendantSizeOptions = pendantSizes.map((p) => p.pendantSize);
+  const pendantSizeOptions = pendantSizes.map((p) => p.pendantsize);
   const finishOptions = finishTypes.map((f) => f.finish);
   const occasionOptions = occasions.map((o) => o.occasion);
 
@@ -68,16 +69,16 @@ function PendantForm({ initial = {}, onChange }) {
   }, [dispatch]);
 
   // Set default values for single-select fields
-  useEffect(() => {
-    if (metalTones.length > 0) {
-      const initialTone = initial?.metalTone;
-      if (initialTone && metalTones.some((t) => t.name === initialTone)) {
-        setValue("metalTone", initialTone);
-      } else if (metalTones.length > 0) {
-        setValue("metalTone", metalTones[0].name);
-      }
-    }
-  }, [metalTones, initial, setValue]);
+  // useEffect(() => {
+  //   if (metalTones.length > 0) {
+  //     const initialTone = initial?.metalTone;
+  //     if (initialTone && metalTones.some((t) => t.name === initialTone)) {
+  //       setValue("metalTone", initialTone);
+  //     } else if (metalTones.length > 0) {
+  //       setValue("metalTone", metalTones[0].name);
+  //     }
+  //   }
+  // }, [metalTones, initial, setValue]);
 
   useEffect(() => {
     if (stoneCarats.length > 0 && initial?.stoneCarat) {
@@ -97,7 +98,8 @@ function PendantForm({ initial = {}, onChange }) {
       reset({
         ...initial,
         customization: {
-          engravingAvailable: initial.customization?.engravingAvailable || false,
+          engravingAvailable:
+            initial.customization?.engravingAvailable || false,
         },
         certification: {
           isCertified: initial.certification?.isCertified || false,
@@ -119,29 +121,25 @@ function PendantForm({ initial = {}, onChange }) {
     <div className="mt-6 space-y-4 border-t pt-6">
       <h3 className="text-lg font-semibold">Pendant Details</h3>
 
-       {/* Single-select Dropdowns */}
-      {metalTones.length > 0 ? (
-        <div>
-          <label htmlFor="metalTone" className="label pb-3">
-            Metal Tone :
-          </label>
-          <select
-            id="metalTone"
-            {...register("metalTone")}
-            className="input input-bordered w-full select"
-          >
-            {metalTones.map((t) => (
-              <option className="capitalize" key={t._id} value={t.name}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : (
-        <div className="skeleton h-12 w-full"></div>
-      )}
+      {/* Single-select Dropdowns */}
+      <Controller
+        control={control}
+        name="metalTone"
+        render={({ field }) =>
+          metalToneOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Metal Tone"
+              options={metalToneOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
 
-        <Controller
+      <Controller
         control={control}
         name="metalPurity"
         render={({ field }) =>
@@ -202,7 +200,7 @@ function PendantForm({ initial = {}, onChange }) {
           )
         }
       />
-      
+
       <Controller
         control={control}
         name="pendantSize"
@@ -219,8 +217,6 @@ function PendantForm({ initial = {}, onChange }) {
           )
         }
       />
-
-     
 
       {stoneCaratOptions.length > 0 ? (
         <div>

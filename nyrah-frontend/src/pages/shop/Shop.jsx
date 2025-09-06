@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
 import { CiFilter } from "react-icons/ci";
@@ -20,6 +20,9 @@ import FilterDrawer from "../../components/FilterDrawer";
 import SortDropdown from "../../components/SortDropdown";
 import ProductSkeleton from "../../components/ProductSkeleton";
 import Pagination from "../../components/Pagination";
+
+import { getAllMaterials } from "../../redux/apis/materialApi";
+import { getAllCategories } from "../../redux/apis/categoryApi";
 
 const containerVariants = {
   show: {
@@ -60,7 +63,13 @@ const Shop = () => {
   const isMaterialRoute = location.pathname.startsWith("/material");
   const navigate = useNavigate();
 
-  const [priceRange, setPriceRange] = useState([0, 100000]);
+  const { materials } = useSelector((state) => state.material);
+  const [material, setMaterial] = useState(null);
+
+  const { categories } = useSelector((state) => state.category);
+  const [category, setCategory] = useState(null);
+
+  const [priceRange, setPriceRange] = useState([0, 2000000]);
   const [inStockOnly, setInStockOnly] = useState(false);
   const [sortBy, setSortBy] = useState("created-descending");
   const [currentPage, setCurrentPage] = useState(1);
@@ -110,7 +119,7 @@ const Shop = () => {
     const qs = new URLSearchParams();
     if (filters.priceGte !== undefined && filters.priceGte > 0)
       qs.set("filter.price.gte", filters.priceGte);
-    if (filters.priceLte !== undefined && filters.priceLte < 100000)
+    if (filters.priceLte !== undefined && filters.priceLte < 2000000)
       qs.set("filter.price.lte", filters.priceLte);
     if (filters.availability !== undefined)
       qs.set("availability", filters.availability);
@@ -127,12 +136,21 @@ const Shop = () => {
       } else {
         dispatch(getProductsByMaterialTag({ tag, ...filters }));
       }
+      dispatch(getAllMaterials());
+      let filtered = materials.filter((m, id) => m?.tag === tag);
+      setMaterial(filtered[0]);
     } else if (main && sub) {
       dispatch(
         getProductsBySub({ mainCategory: main, subCategory: sub, ...filters })
       );
+      dispatch(getAllCategories());
+      let filtered = categories.filter((c, id) => c?.main === main);
+      setCategory(filtered[0]);
     } else if (main) {
       dispatch(getProductsByMain({ mainCategory: main, ...filters }));
+      dispatch(getAllCategories());
+      let filtered = categories.filter((c, id) => c?.main === main);
+      setCategory(filtered[0]);
     } else {
       dispatch(getGroupedProducts(filters));
     }
@@ -187,7 +205,7 @@ const Shop = () => {
 
         <div className="drawer-content">
           {/* Top bar */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-1">
             <FilterDrawer
               isOpen={drawerOpen}
               onClose={() => setDrawerOpen(false)}
@@ -210,6 +228,33 @@ const Shop = () => {
               </p>
               <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />
             </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 mb-6">
+            {isMaterialRoute
+              ? material?.sub?.map((m, id) => (
+                  <Link
+                    key={`material-${id}`}
+                    to={`/material/${tag}/${m}`}
+                    className={`badge rounded-xs badge-md ${
+                      m === sub ? "badge-neutral" : "badge-soft"
+                    } capitalize`}
+                  >
+                    {m}
+                  </Link>
+                ))
+              : main &&
+                category?.sub?.map((c, id) => (
+                  <Link
+                    key={`category-${id}`}
+                    to={`/product/${main}/${c}`}
+                    className={`badge rounded-xs badge-md ${
+                      c === sub ? "badge-neutral" : "badge-soft"
+                    } capitalize`}
+                  >
+                    {c}
+                  </Link>
+                ))}
           </div>
           {/* Product Grid */}
           {loading ? (

@@ -1,56 +1,54 @@
 const mongoose = require("mongoose");
 
 const RingSchema = new mongoose.Schema({
-
- sizeOptions: {
-  type: [String],
-  required: true,
- },
-
- metalTone: {
-  type: String,
-  required: true,
- },
-
- metalPurity: { type: [String], required: true },
-
- diamondSize: { type: String, require: false },
-
- finish: { type: String, require: false },
-
- stoneType: { type: [String], required: true },
-
- centerStoneOptions: {
-  carats: { type: String, require: false },
-  shapes: { type: String, require: false },
-  qualities: { type: String, require: false },
- },
-
- customization: {
-  // goldToneAvailable: { type: Boolean, default: false },
-  engravingAvailable: { type: Boolean, default: false },
-  // stoneUpgradeAvailable: { type: Boolean, default: false },
- },
-
- certification: {
-  isCertified: { type: Boolean, default: false },
-
-  certType: {
-   type: String,
-   enum: ["IGI", "GIA", ""], // ✅ only enum kept
-   default: "",
+  sizeOptions: {
+    type: [String],
+    required: true,
   },
-  isHallmarked: { type: Boolean, default: false },
- },
- 
- shippingNote: {
-  type: String,
-  default: "Free shipping in India. Custom orders: 15–20 business days.",
- },
 
+  metalTone: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
+
+  metalPurity: { type: [String], required: true },
+
+  diamondSize: { type: String, require: false },
+
+  finish: { type: String, require: false },
+
+  stoneType: { type: [String], required: true },
+
+  centerStoneOptions: {
+    carats: { type: String, require: false },
+    shapes: { type: String, require: false },
+    qualities: { type: String, require: false },
+  },
+
+  customization: {
+    // goldToneAvailable: { type: Boolean, default: false },
+    engravingAvailable: { type: Boolean, default: false },
+    // stoneUpgradeAvailable: { type: Boolean, default: false },
+  },
+
+  certification: {
+    isCertified: { type: Boolean, default: false },
+
+    certType: {
+      type: String,
+      enum: ["IGI", "GIA", ""], // ✅ only enum kept
+      default: "",
+    },
+    isHallmarked: { type: Boolean, default: false },
+  },
+
+  shippingNote: {
+    type: String,
+    default: "Free shipping in India. Custom orders: 15–20 business days.",
+  },
 });
-
-
 
 // BraceletSchema
 const BraceletSchema = new mongoose.Schema({
@@ -58,11 +56,14 @@ const BraceletSchema = new mongoose.Schema({
     type: [String], // e.g., ["6.0\"", "6.5\"", "Adjustable"]
     required: false, // Now optional
   },
+  metalTone: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
+
   metalPurity: { type: [String], required: true },
-  metalTone: {
-    type: String,
-    required: false, // Optional
-  },
 
   stoneType: { type: [String], required: true },
 
@@ -115,14 +116,16 @@ const NecklaceSchema = new mongoose.Schema({
     required: false, // Now optional
   },
 
-  metalPurity: { type: [String], required: true },
+  metalTone: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
 
-  metalTone: {
-    type: String,
-    required: false,
-  },
+ metalPurity: { type: [String], required: true },
 
- stoneType: { type: [String], required: true },
+  stoneType: { type: [String], required: true },
 
   certification: {
     isCertified: { type: Boolean, default: false },
@@ -154,10 +157,12 @@ const NecklaceSchema = new mongoose.Schema({
 // earring schema
 const EarringSchema = new mongoose.Schema({
   metalPurity: { type: [String], required: true },
-  metalTone: {
-    type: String,
-    required: false,
-  },
+  metalTone: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
   stoneType: { type: [String], required: true },
   stoneCarat: { type: String, require: false },
   earringSize: {
@@ -220,11 +225,14 @@ const PendantSchema = new mongoose.Schema({
   },
 
   metalPurity: { type: [String], required: true },
-  metalTone: {
-    type: String,
-  },
+  metalTone: [
+    {
+      type: String,
+      required: true,
+    },
+  ],
 
- stoneType: { type: [String], required: true },
+  stoneType: { type: [String], required: true },
 
   stoneCarat: { type: String, require: false },
 

@@ -11,7 +11,7 @@ function RingForm({ initial = {}, onChange }) {
     defaultValues: useMemo(() => ({
       sizeOptions: [],
       metalPurity: [],
-      metalTone: "",
+      metalTone: [],
       diamondSize: "",
       finish: "",
       stoneType: [],
@@ -43,6 +43,7 @@ function RingForm({ initial = {}, onChange }) {
   const { list: stoneShapes = [] } = featureSlice["stoneShape"] || {};
   const { list: stoneQualities = [] } = featureSlice["stoneQuality"] || {};
 
+  const metalToneOptions = metalTones.map((m)=>m.name)
   const ringSizeOptions = ringSizes.map((s) => s.size);
   const diamondSizeOptions = diamondSizes.map((d) => d.diamondSize);
   const metalPurityOptions = metalPurities.map((p) => p.name);
@@ -65,18 +66,18 @@ function RingForm({ initial = {}, onChange }) {
   }, [dispatch]);
 
   // Set default values for single-select fields once their data is loaded
-  useEffect(() => {
-    if (metalTones.length > 0) {
-      // Logic for Metal Tone: default to "Silver" or initial value
-      const silverTone = metalTones.find(t => t.name.toLowerCase() === "silver")?.name;
-      const initialTone = initial?.metalTone;
-      if (!initialTone && silverTone) {
-        setValue("metalTone", silverTone);
-      } else if (initialTone) {
-        setValue("metalTone", initialTone);
-      }
-    }
-  }, [metalTones, initial, setValue]);
+  // useEffect(() => {
+  //   if (metalTones.length > 0) {
+  //     // Logic for Metal Tone: default to "Silver" or initial value
+  //     const silverTone = metalTones.find(t => t.name.toLowerCase() === "silver")?.name;
+  //     const initialTone = initial?.metalTone;
+  //     if (!initialTone && silverTone) {
+  //       setValue("metalTone", silverTone);
+  //     } else if (initialTone) {
+  //       setValue("metalTone", initialTone);
+  //     }
+  //   }
+  // }, [metalTones, initial, setValue]);
 
   useEffect(() => {
     if (diamondSizes.length > 0 && initial?.diamondSize) {
@@ -142,7 +143,7 @@ function RingForm({ initial = {}, onChange }) {
       <h3 className="text-lg font-semibold">Ring Details</h3>
 
       {/* Metal Tone Selector */}
-      {metalTones.length > 0 ? (
+      {/* {metalTones.length > 0 ? (
         <div>
           <label htmlFor="metalTone" className="label pb-3">
             Metal Tone :
@@ -161,7 +162,23 @@ function RingForm({ initial = {}, onChange }) {
         </div>
       ) : (
         <div className="skeleton h-12 w-full"></div>
-      )}
+      )} */}
+      <Controller
+        control={control}
+        name="metalTone"
+        render={({ field }) =>
+          metalToneOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Metal Tone"
+              options={metalToneOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
        <Controller
         control={control}
         name="metalPurity"

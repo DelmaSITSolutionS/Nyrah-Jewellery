@@ -23,6 +23,10 @@ const customizationSlice = createSlice({
     resetCustomizationSuccess: (state) => {
       state.success = null;
     },
+    // ADDED: This reducer resets the specific state used on the product detail page.
+    clearCustomizationData: (state) => {
+      state.customizationByProductGroup = null;
+    },
   },
   extraReducers: (builder) => {
     // Create
@@ -104,7 +108,10 @@ const customizationSlice = createSlice({
   },
 });
 
-export const { clearCustomizationError, resetCustomizationSuccess } =
-  customizationSlice.actions;
+export const {
+  clearCustomizationError,
+  resetCustomizationSuccess,
+  clearCustomizationData, // ADDED: Export the new action creator.
+} = customizationSlice.actions;
 
 export default customizationSlice.reducer;

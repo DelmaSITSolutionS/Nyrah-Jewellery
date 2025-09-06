@@ -164,13 +164,13 @@ export const getProductsByMaterialSub = createAsyncThunk(
 // ───────────────────────────────────────────────────────────────────────────────
 export const getProductGroupVariants = createAsyncThunk(
   "product/getGroupVariants",
-  async ({ groupId, ...params }, thunkAPI) => {
+  async ({ id, ...params }, thunkAPI) => {
     try {
-      const { data } = await API.get(`/product/group/${groupId}`, {
+      const { data } = await API.get(`/product/group/${id}`, {
         params: buildQuery(params),
       });
 
-      return { groupId, variants: data.variants };
+      return { id, product: data.product };
     } catch (err) {
       return thunkAPI.rejectWithValue(
         err.response?.data?.message || err.message

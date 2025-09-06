@@ -111,7 +111,7 @@ export default function App() {
       />
 
       <a
-        href="https://wa.me/9197335271778"
+        href="https://wa.me/919737527178"
         className="fixed bottom-4 right-4 rounded-full p-3 bg-[#000000] text-[#ffffff] text-4xl z-[98]"
         target="_blank"
       >
@@ -145,7 +145,7 @@ export default function App() {
           <Route path="/material/:tag/:sub" element={<Shop />} />
           <Route path="/material/:tag" element={<Shop />} />
           <Route
-            path="/product/group/:groupname"
+            path="/product/group/:id"
             element={
               <ProductDetail setCartOpen={setCartOpen} setLogin={setLogin} />
             }

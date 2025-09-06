@@ -11,7 +11,7 @@ export default function ProductCard({ product }) {
 
   if (!product) return null;
 
-  const { name, images = [], price, productGroup, rating } = product;
+  const {_id:id, name, images = [], price, productGroup, rating } = product;
 
   const mainImage = optimizeImage(images[0], 400, "auto:best");
   const hoverImage = optimizeImage(images[1] || images[0], 400, "auto:best");
@@ -41,7 +41,7 @@ export default function ProductCard({ product }) {
 
   return (
     <Link
-      to={`/product/group/${productGroup}`}
+      to={`/product/group/${id}`}
       className="group block border border-base-200 w-full overflow-hidden transition "
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

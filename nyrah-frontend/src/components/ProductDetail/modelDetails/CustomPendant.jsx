@@ -1,35 +1,45 @@
-// CustomRing.jsx
-
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getCustomizationsByGroup } from "../../../redux/apis/customizationApi";
-import CustomizationPillSelect from "./CustomizationPillSelect";
 import { getAllOptions } from "../../../redux/apis/optionApi";
+import CustomizationPillSelect from "./CustomizationPillSelect";
 import CustomLoader from "./CustomLoader";
 
-function CustomRing({ productGroup, selectedCustomizations, onChange }) {
+function CustomPendant({ productGroup, selectedCustomizations, onChange }) {
   const dispatch = useDispatch();
 
   const { customizationByProductGroup } = useSelector(
     (state) => state.customization
   );
-  const { list: ringSizes = [] } =
-    useSelector((s) => s.options)["ringSize"] || {};
+  const featureSlice = useSelector((s) => s.options);
+
+  // Fetching options for both pendant size and chain length
+  const { list: pendantSizes = [] } = featureSlice["pendantSize"] || {};
+  const { list: chainLengths = [] } = featureSlice["chainLength"] || {};
 
   const { metalPurity = [], stoneType = [] } = customizationByProductGroup || {};
-  const sizeOptions = ringSizes.map((s) => ({ value: s.size, price: s.price || 0 }));
 
-  // Effect 1: FETCH data
+  // Map options to the consistent { value, price } structure
+  const sizeOptions = pendantSizes.map((s) => ({
+    value: s.pendantsize,
+    price: s.price || 0,
+  }));
+  const lengthOptions = chainLengths.map((l) => ({
+    value: l.length,
+    price: l.price || 0,
+  }));
+
+  // Effect 1: FETCH all necessary data
   useEffect(() => {
     if (productGroup) {
       dispatch(getCustomizationsByGroup(productGroup));
-      dispatch(getAllOptions["ringSize"]());
+      dispatch(getAllOptions["pendantSize"]());
+      dispatch(getAllOptions["chainLength"]());
     }
   }, [dispatch, productGroup]);
 
-  // Effect 2: REACT to data arriving to set defaults for THIS tab
+  // Effect 2: REACT to data to set defaults (but not for size or length)
   useEffect(() => {
-    // Only set defaults if the data is available and no selection has been made yet
     const updates = {};
     if (metalPurity.length > 0 && !selectedCustomizations?.metalPurity) {
       updates.metalPurity = metalPurity[0];
@@ -37,18 +47,22 @@ function CustomRing({ productGroup, selectedCustomizations, onChange }) {
     if (stoneType.length > 0 && !selectedCustomizations?.stoneType) {
       updates.stoneType = stoneType[0];
     }
+
     if (Object.keys(updates).length > 0) {
       onChange(updates);
     }
-  }, [metalPurity, stoneType, sizeOptions, selectedCustomizations, onChange]);
-  
+  }, [metalPurity, stoneType, selectedCustomizations, onChange]);
+
   const handleSelectChange = (key, value, price = 0) => {
     onChange({ [key]: { value, price } });
   };
 
-  // Derived loading state
-  const isLoading = metalPurity.length === 0 || stoneType.length === 0 || ringSizes.length === 0;
-  if (isLoading) return <CustomLoader />;
+  // DERIVE the loading state from the data
+  const isLoading = !customizationByProductGroup || pendantSizes.length === 0 || chainLengths.length === 0;
+
+  if (isLoading) {
+    return <CustomLoader />;
+  }
 
   return (
     <div className="space-y-4">
@@ -65,16 +79,27 @@ function CustomRing({ productGroup, selectedCustomizations, onChange }) {
 
         {/* Size Options */}
         <CustomizationPillSelect
-          label="Ring Size"
+          label="Pendant Size"
           options={sizeOptions}
-          name="sizeOptions"
-          value={selectedCustomizations?.sizeOptions?.value}
+          name="pendantSize"
+          value={selectedCustomizations?.pendantSize?.value}
           onChange={handleSelectChange}
           size={true}
           price={true}
         />
 
-        {/* Stone Type */}
+        {/* Chain Length Options */}
+        <CustomizationPillSelect
+          label="Chain length"
+          options={lengthOptions}
+          name="chainLength"
+          value={selectedCustomizations?.chainLength?.value}
+          onChange={handleSelectChange}
+          size={true}
+          price={true}
+        />
+
+        {/* stone type */}
         <CustomizationPillSelect
           label="Stone Type"
           options={stoneType}
@@ -88,4 +113,5 @@ function CustomRing({ productGroup, selectedCustomizations, onChange }) {
   );
 }
 
-export default CustomRing;
+export default CustomPendant;
+

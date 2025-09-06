@@ -234,25 +234,23 @@ const getProductsBySubCategory = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-const getProductsByGroup = catchAsyncErrors(async (req, res, next) => {
-  const { productGroup } = req.params;
+const getProductById = catchAsyncErrors(async (req, res, next) => {
+  const { id } = req.params;
 
-  const products = await Product.find({ productGroup })
+  const product = await Product.findById(id)
     .sort({ createdAt: 1 })
     .populate("detailsRef");
 
-  if (!products || products.length === 0) {
+  if (!product) {
     return res.status(404).json({
       success: false,
-      message: "No products found for this group",
+      message: "No products found for this ID",
     });
   }
 
   res.status(200).json({
     success: true,
-    count: products.length,
-    group: productGroup,
-    variants: products,
+    product: product,
   });
 });
 
@@ -578,7 +576,7 @@ module.exports = {
   getFirstProductsInGroups,
   getProductsByMainCategory,
   getProductsBySubCategory,
-  getProductsByGroup,
+  getProductById,
   updateProductVariant,
   deleteProductVariant,
   calculateFinalPriceForClient,

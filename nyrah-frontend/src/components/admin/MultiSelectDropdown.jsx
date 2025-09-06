@@ -53,7 +53,7 @@ export default function MultiSelectDropdown({
         onClick={toggleOpen}
       >
         {selected?.length > 0 ? (
-          selected.map((item) => (
+          selected?.map((item) => (
             <span
               key={item}
               className="badge badge-md flex items-center badge-soft capitalize"

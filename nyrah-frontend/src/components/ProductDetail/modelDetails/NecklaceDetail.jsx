@@ -1,6 +1,5 @@
-import React, { useEffect } from "react";
-import CustomizationSelect from "./CustomizationSelect";
-import CustomizationPillSelect from "./CustomizationPillSelect"
+import React from "react";
+import CustomizationPillSelect from "./CustomizationPillSelect";
 
 function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
   const {
@@ -10,20 +9,16 @@ function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
     stoneType = [],
   } = detailData || {};
 
-  useEffect(() => {
-    onChange((prev) => ({
-      ...prev,
-      metalPurity: metalPurity[0],
-      stoneType: stoneType[0],
-    }));
-  }, []);
+  // The problematic useEffect has been removed. The parent component handles defaults.
 
   const handleSelectChange = (key, value, price = 0) => {
-    onChange((prev) => ({
-      ...prev,
-      [key]: { value, price },
-    }));
+    onChange({ [key]: { value, price } });
   };
+
+  const handleSimpleSelectChange = (key, value) => {
+    onChange({ [key]: { value, price: 0 } });
+  };
+
 
   return (
     <div className="space-y-4">
@@ -31,10 +26,10 @@ function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
         {/* Metal Purity */}
         <CustomizationPillSelect
           label="Metal Purity"
-          options={[metalPurity[0]]}
+          options={metalPurity.length ? [metalPurity[0]] : []}
           name="metalPurity"
-          value={selectedCustomizations?.metalPurity}
-          onChange={handleSelectChange}
+          value={selectedCustomizations?.metalPurity?.value}
+          onChange={handleSimpleSelectChange}
         />
 
         {/* Size Options */}
@@ -45,8 +40,10 @@ function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
           value={selectedCustomizations?.sizes?.value}
           onChange={handleSelectChange}
           size={true}
+          price={true}
         />
 
+        {/* Chain Length */}
         <CustomizationPillSelect
           label="Chain length"
           options={chainLengths}
@@ -54,15 +51,16 @@ function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
           value={selectedCustomizations?.chainLengths?.value}
           onChange={handleSelectChange}
           size={true}
+          price={true}
         />
 
-        {/* stone type  */}
+        {/* stone type */}
         <CustomizationPillSelect
           label="Stone Type"
-          options={stoneType.length&&[stoneType[0]]}
+          options={stoneType.length ? [stoneType[0]] : []}
           name="stoneType"
-          value={selectedCustomizations?.stoneType}
-          onChange={handleSelectChange}
+          value={selectedCustomizations?.stoneType?.value}
+          onChange={handleSimpleSelectChange}
         />
       </div>
     </div>
@@ -70,3 +68,4 @@ function NecklaceDetail({ detailData, selectedCustomizations, onChange }) {
 }
 
 export default NecklaceDetail;
+

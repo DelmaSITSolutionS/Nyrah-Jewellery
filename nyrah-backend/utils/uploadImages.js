@@ -49,7 +49,12 @@ const uploadSingleImageToCloudinary = async (file, folder = "") => {
         },
         (error, result) => {
           if (error) return reject(error);
-          resolve(result); // return full result
+          // ✅ Always return secure_url
+          resolve({
+            url: result.secure_url,
+            public_id: result.public_id,
+            resource_type: result.resource_type,
+          }); // return full result
         }
       )
       .end(file.buffer);

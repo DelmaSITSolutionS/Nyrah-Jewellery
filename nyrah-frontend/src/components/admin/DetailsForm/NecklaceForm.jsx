@@ -13,7 +13,7 @@ function NecklaceForm({ initial = {}, onChange }) {
         sizes: [],
         chainLengths: [],
         metalPurity: [],
-        metalTone: "",
+        metalTone: [],
         stoneType: [],
         certification: {
           isCertified: false,
@@ -22,7 +22,8 @@ function NecklaceForm({ initial = {}, onChange }) {
         },
         weight: "",
         finish: "",
-        shippingNote: "Free shipping in India. International delivery available",
+        shippingNote:
+          "Free shipping in India. International delivery available",
         deliveryTime: "5–7 days (regular), 15–20 days (custom orders)",
       }),
       []
@@ -37,7 +38,8 @@ function NecklaceForm({ initial = {}, onChange }) {
   const { list: stoneTypes = [] } = featureSlice["stoneType"] || {};
   const { list: finishTypes = [] } = featureSlice["finish"] || {};
 
-  const necklaceSizeOptions = necklaceSizes.map((s) => s.size);
+  const metalToneOptions = metalTones.map((m) => m.name);
+  const necklaceSizeOptions = necklaceSizes.map((s) => s.necklaceSize);
   const chainLengthOptions = chainLengths.map((c) => c.length);
   const metalPurityOptions = metalPurities.map((p) => p.name);
   const stoneTypeOptions = stoneTypes.map((st) => st.type);
@@ -53,16 +55,16 @@ function NecklaceForm({ initial = {}, onChange }) {
   }, [dispatch]);
 
   // Set default values for single-select fields
-  useEffect(() => {
-    if (metalTones.length > 0) {
-      const initialTone = initial?.metalTone;
-      if (initialTone && metalTones.some((t) => t.name === initialTone)) {
-        setValue("metalTone", initialTone);
-      } else if (metalTones.length > 0) {
-        setValue("metalTone", metalTones[0].name);
-      }
-    }
-  }, [metalTones, initial, setValue]);
+  // useEffect(() => {
+  //   if (metalTones.length > 0) {
+  //     const initialTone = initial?.metalTone;
+  //     if (initialTone && metalTones.some((t) => t.name === initialTone)) {
+  //       setValue("metalTone", initialTone);
+  //     } else if (metalTones.length > 0) {
+  //       setValue("metalTone", metalTones[0].name);
+  //     }
+  //   }
+  // }, [metalTones, initial, setValue]);
   useEffect(() => {
     if (finishTypes.length > 0 && initial?.finish) {
       setValue("finish", initial.finish);
@@ -90,32 +92,29 @@ function NecklaceForm({ initial = {}, onChange }) {
     return () => subscription.unsubscribe();
   }, [watch, onChange]);
 
+  
+
   return (
     <div className="mt-6 space-y-4 border-t pt-6">
       <h3 className="text-lg font-semibold">Necklace Details</h3>
 
-        {/* Single-select Dropdowns */}
-      {metalTones.length > 0 ? (
-        <div>
-          <label htmlFor="metalTone" className="label pb-3">
-            Metal Tone :
-          </label>
-          <select
-            id="metalTone"
-            {...register("metalTone")}
-            className="input input-bordered w-full select"
-          >
-            <option value="">Select a metal tone</option>
-            {metalTones.map((t) => (
-              <option className="capitalize" key={t._id} value={t.name}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : (
-        <div className="skeleton h-12 w-full"></div>
-      )}
+      {/* Single-select Dropdowns */}
+      <Controller
+        control={control}
+        name="metalTone"
+        render={({ field }) =>
+          metalToneOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Metal Tone"
+              options={metalToneOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
 
       <Controller
         control={control}
@@ -133,7 +132,7 @@ function NecklaceForm({ initial = {}, onChange }) {
           )
         }
       />
-      
+
       <Controller
         control={control}
         name="stoneType"
@@ -168,7 +167,7 @@ function NecklaceForm({ initial = {}, onChange }) {
           )
         }
       />
-      
+
       <Controller
         control={control}
         name="chainLengths"
@@ -185,10 +184,6 @@ function NecklaceForm({ initial = {}, onChange }) {
           )
         }
       />
-
-      
-
-    
 
       {finishTypes.length > 0 ? (
         <div>

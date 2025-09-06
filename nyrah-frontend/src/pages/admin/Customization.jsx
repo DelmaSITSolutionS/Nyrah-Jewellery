@@ -116,7 +116,7 @@ export default function Customization() {
 
   const onSubmit = async (form) => {
     const payload = {
-      productGroup: String(form.productGroup || "").toLowerCase().trim(),
+      productGroup: String(form.productGroup || "").trim(),
       metalPurity: toValuePriceArray(form.metalPurity),
       stoneType: toValuePriceArray(form.stoneType),
     };

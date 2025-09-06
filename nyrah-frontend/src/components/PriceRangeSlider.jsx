@@ -2,7 +2,7 @@ import React from "react";
 import { Range } from "react-range";
 
 const MIN = 0;
-const MAX = 100000;
+const MAX = 2000000;
 
 export default function PriceRangeSlider({ priceRange, setPriceRange }) {
   return (

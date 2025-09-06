@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import CustomizationPillSelect from "./CustomizationPillSelect";
 
 function BraceletDetail({ detailData, selectedCustomizations, onChange }) {
@@ -9,19 +9,16 @@ function BraceletDetail({ detailData, selectedCustomizations, onChange }) {
     customization = {},
   } = detailData || {};
 
-  useEffect(() => {
-    onChange((prev) => ({
-      ...prev,
-      metalPurity: metalPurity[0],
-      stoneType: stoneType[0],
-    }));
-  }, []);
+  // REMOVED: The problematic useEffect that was setting default state.
+  // The parent component (ProductDetail) now handles this.
 
   const handleSelectChange = (key, value, price = 0) => {
-    onChange((prev) => ({
-      ...prev,
-      [key]: { value, price },
-    }));
+    // Pass a single object with the update to the parent's unified handler
+    onChange({ [key]: { value, price } });
+  };
+
+  const handleSimpleSelectChange = (key, value) => {
+    onChange({ [key]: { value, price: 0 } });
   };
 
   return (
@@ -30,10 +27,11 @@ function BraceletDetail({ detailData, selectedCustomizations, onChange }) {
         {/* Metal Purity */}
         <CustomizationPillSelect
           label="Metal Purity"
-          options={[metalPurity[0]]}
+          options={metalPurity.length ? [metalPurity[0]] : []}
           name="metalPurity"
-          value={selectedCustomizations?.metalPurity}
-          onChange={handleSelectChange}
+          // CORRECTED: Read the .value from the state object
+          value={selectedCustomizations?.metalPurity?.value}
+          onChange={handleSimpleSelectChange}
         />
 
         {/* Size Options */}
@@ -44,15 +42,17 @@ function BraceletDetail({ detailData, selectedCustomizations, onChange }) {
           value={selectedCustomizations?.sizeOptions?.value}
           onChange={handleSelectChange}
           size={true}
+          price={true} // Assuming size can have a price
         />
 
-        {/* stone type  */}
+        {/* stone type */}
         <CustomizationPillSelect
           label="Stone Type"
-          options={stoneType.length&&[stoneType[0]]}
+          options={stoneType.length ? [stoneType[0]] : []}
           name="stoneType"
-          value={selectedCustomizations?.stoneType}
-          onChange={handleSelectChange}
+          // CORRECTED: Read the .value from the state object
+          value={selectedCustomizations?.stoneType?.value}
+          onChange={handleSimpleSelectChange}
         />
       </div>
 

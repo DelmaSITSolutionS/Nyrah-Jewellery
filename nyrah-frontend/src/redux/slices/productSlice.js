@@ -13,7 +13,7 @@ import {
 
 const initialState = {
   list: [],
-  groupVariants: [],
+  product: null,
   loading: false,
   error: null,
   totalCount: 0,
@@ -114,7 +114,7 @@ const productSlice = createSlice({
 
       // Get Group Variants
       .addCase(getProductGroupVariants.fulfilled, (state, action) => {
-        state.groupVariants = action.payload;
+        state.product = action.payload.product;
       })
 
       // Update Product

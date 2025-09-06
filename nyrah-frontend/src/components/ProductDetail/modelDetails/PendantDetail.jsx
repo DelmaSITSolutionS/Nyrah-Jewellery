@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import CustomizationPillSelect from "./CustomizationPillSelect"
+import React from "react";
+import CustomizationPillSelect from "./CustomizationPillSelect";
 
 function PendantDetail({ detailData, selectedCustomizations, onChange }) {
   const {
@@ -7,23 +7,14 @@ function PendantDetail({ detailData, selectedCustomizations, onChange }) {
     chainLength = [],
     stoneType = [],
     pendantSize = [],
-    finish = [],
     customization = {},
   } = detailData || {};
 
-    useEffect(() => {
-      onChange((prev) => ({
-        ...prev,
-        metalPurity: metalPurity[0],
-        stoneType: stoneType[0],
-      }));
-    }, []);
+  // REMOVED: The problematic useEffect is now gone.
+  // Parent component handles all default state.
 
   const handleSelectChange = (key, value, price = 0) => {
-    onChange((prev) => ({
-      ...prev,
-      [key]: { value, price },
-    }));
+    onChange({ [key]: { value, price } });
   };
 
   return (
@@ -32,9 +23,9 @@ function PendantDetail({ detailData, selectedCustomizations, onChange }) {
         {/* Metal Purity */}
         <CustomizationPillSelect
           label="Metal Purity"
-          options={[metalPurity[0]]}
+          options={metalPurity.length ? [metalPurity[0]] : []}
           name="metalPurity"
-          value={selectedCustomizations?.metalPurity}
+          value={selectedCustomizations?.metalPurity?.value}
           onChange={handleSelectChange}
         />
 
@@ -46,8 +37,10 @@ function PendantDetail({ detailData, selectedCustomizations, onChange }) {
           value={selectedCustomizations?.pendantSize?.value}
           onChange={handleSelectChange}
           size={true}
+          price={true}
         />
 
+        {/* Chain Length */}
         <CustomizationPillSelect
           label="Chain length"
           options={chainLength}
@@ -55,21 +48,25 @@ function PendantDetail({ detailData, selectedCustomizations, onChange }) {
           value={selectedCustomizations?.chainLength?.value}
           onChange={handleSelectChange}
           size={true}
+          price={true}
         />
 
-        {/* stone type  */}
+        {/* stone type */}
         <CustomizationPillSelect
           label="Stone Type"
-          options={stoneType.length&&[stoneType[0]]}
+          options={stoneType.length ? [stoneType[0]] : []}
           name="stoneType"
-          value={selectedCustomizations?.stoneType}
+          value={selectedCustomizations?.stoneType?.value}
           onChange={handleSelectChange}
         />
       </div>
 
       {customization.engravingAvailable && (
         <div className=" p-3 bg-[#fff2f2] ">
-          <label htmlFor="engraving" className="block font-semibold uppercase text-[.8rem] text-[#D98324]">
+          <label
+            htmlFor="engraving"
+            className="block font-semibold uppercase text-[.8rem] text-[#D98324]"
+          >
             Engraving Text
           </label>
           <input
@@ -79,7 +76,7 @@ function PendantDetail({ detailData, selectedCustomizations, onChange }) {
             value={selectedCustomizations?.engraving?.value || ""}
             onChange={(e) => handleSelectChange("engraving", e.target.value, 0)}
             className=" px-2 py-2 w-full mt-2 bg-white outline-none"
-            style={{border:"none"}}
+            style={{ border: "none" }}
           />
         </div>
       )}
@@ -88,3 +85,4 @@ function PendantDetail({ detailData, selectedCustomizations, onChange }) {
 }
 
 export default PendantDetail;
+

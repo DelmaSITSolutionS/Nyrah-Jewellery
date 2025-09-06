@@ -54,7 +54,7 @@ export default function FilterDrawer({
           {/* sliding panel */}
           <motion.div
             key="filter-panel"
-            className="fixed  top-0 left-0 w-full sm:w-[300px] h-screen bg-base-100 z-[1002] shadow-lg flex flex-col"
+            className="fixed  top-0 left-0 w-full  max-w-[300px] h-screen bg-base-100 z-[1002] shadow-lg flex flex-col"
             variants={panel}
             initial="hidden"
             animate="show"
@@ -98,7 +98,10 @@ export default function FilterDrawer({
                       className="toggle toggle-sm"
                       id="stock-toggle"
                       checked={inStockOnly}
-                      onChange={(e) => setInStockOnly(e.target.checked)}
+                      onChange={(e) => {
+                        onClose()
+                        setInStockOnly(e.target.checked);
+                      }}
                     />
                     <label
                       htmlFor="stock-toggle"
@@ -117,7 +120,7 @@ export default function FilterDrawer({
                   className="collapse collapse-arrow bg-base-100 border-base-300 w-full border"
                 >
                   <summary className="collapse-title pt-5 uppercase font-poppins font-[400] text-[#4A4A4A] text-[.85rem] tracking-widest">
-                    <Link to={`/product/${category?.main}`}>
+                    <Link onClick={onClose} to={`/product/${category?.main}`}>
                       {category?.main}
                     </Link>
                   </summary>
@@ -126,6 +129,7 @@ export default function FilterDrawer({
                       {category?.sub.map((s, j) => (
                         <li key={j} className="py-2">
                           <Link
+                            onClick={onClose}
                             className="capitalize tracking-widest font-poppins font-[300] text-[.75rem]"
                             to={`/product/${category.main}/${s}`}
                           >
@@ -145,7 +149,7 @@ export default function FilterDrawer({
                   className="collapse collapse-arrow bg-base-100 border-base-300 w-full border"
                 >
                   <summary className="collapse-title pt-5 uppercase font-poppins font-[400] text-[#4A4A4A] text-[.85rem] tracking-widest">
-                    <Link to={`/product/${category?.tag}`}>
+                    <Link onClick={onClose} to={`/material/${category?.tag}`}>
                       {category?.tag}
                     </Link>
                   </summary>
@@ -154,8 +158,9 @@ export default function FilterDrawer({
                       {category?.sub.map((s, j) => (
                         <li key={j} className="py-2">
                           <Link
+                            onClick={onClose}
                             className="capitalize tracking-widest font-poppins font-[300] text-[.75rem]"
-                            to={`/product/${category.tag}/${s}`}
+                            to={`/material/${category.tag}/${s}`}
                           >
                             {s}
                           </Link>
@@ -172,7 +177,7 @@ export default function FilterDrawer({
               <button
                 className="btn btn-sm btn-neutral btn-outline w-full rounded-none"
                 onClick={() => {
-                  setPriceRange([0, 100000]);
+                  setPriceRange([0, 2000000]);
                   setInStockOnly(false);
                 }}
               >

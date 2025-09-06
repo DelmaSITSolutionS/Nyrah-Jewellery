@@ -12,7 +12,7 @@ function EarringForm({ initial = {}, onChange }) {
     defaultValues: useMemo(
       () => ({
         metalPurity: [],
-        metalTone: "",
+        metalTone: [],
         stoneType: [],
         stoneCarat: "",
         earringSize: [],
@@ -53,7 +53,7 @@ function EarringForm({ initial = {}, onChange }) {
   const metalToneOptions = metalTones.map((t) => t.name);
   const stoneTypeOptions = stoneTypes.map((st) => st.type);
   const stoneCaratOptions = stoneCarats.map((sc) => sc.carat);
-  const earringSizeOptions = earringSizes.map((es) => es.earringSize);
+  const earringSizeOptions = earringSizes.map((es) => es.earringsize);
   const backTypeOptions = backTypes.map((bt) => bt.backType);
   const finishOptions = finishTypes.map((f) => f.finish);
   const occasionOptions = occasions.map((o) => o.occasion);
@@ -70,16 +70,16 @@ function EarringForm({ initial = {}, onChange }) {
   }, [dispatch]);
 
   // Set default values for single-select fields
-  useEffect(() => {
-    if (metalTones.length > 0) {
-      const initialTone = initial?.metalTone;
-      if (initialTone && metalTones.some((t) => t.name === initialTone)) {
-        setValue("metalTone", initialTone);
-      } else if (metalTones.length > 0) {
-        setValue("metalTone", metalTones[0].name);
-      }
-    }
-  }, [metalTones, initial, setValue]);
+  // useEffect(() => {
+  //   if (metalTones.length > 0) {
+  //     const initialTone = initial?.metalTone;
+  //     if (initialTone && metalTones.some((t) => t.name === initialTone)) {
+  //       setValue("metalTone", initialTone);
+  //     } else if (metalTones.length > 0) {
+  //       setValue("metalTone", metalTones[0].name);
+  //     }
+  //   }
+  // }, [metalTones, initial, setValue]);
 
   useEffect(() => {
     if (backTypes.length > 0 && initial?.backType) {
@@ -105,7 +105,8 @@ function EarringForm({ initial = {}, onChange }) {
       reset({
         ...initial,
         customization: {
-          engravingAvailable: initial.customization?.engravingAvailable || false,
+          engravingAvailable:
+            initial.customization?.engravingAvailable || false,
         },
         certification: {
           isCertified: initial.certification?.isCertified || false,
@@ -128,27 +129,22 @@ function EarringForm({ initial = {}, onChange }) {
       <h3 className="text-lg font-semibold">Earring Details</h3>
 
       {/* Single-select dropdowns */}
-      {metalTones.length > 0 ? (
-        <div>
-          <label htmlFor="metalTone" className="label pb-3">
-            Metal Tone :
-          </label>
-          <select
-            id="metalTone"
-            {...register("metalTone")}
-            className="input input-bordered w-full select"
-          >
-            <option value="">Select a metal tone</option>
-            {metalToneOptions.map((tone, i) => (
-              <option className="capitalize" key={i} value={tone}>
-                {tone}
-              </option>
-            ))}
-          </select>
-        </div>
-      ) : (
-        <div className="skeleton h-12 w-full"></div>
-      )}
+      <Controller
+        control={control}
+        name="metalTone"
+        render={({ field }) =>
+          metalToneOptions.length > 0 ? (
+            <MultiSelectDropdown
+              label="Metal Tone"
+              options={metalToneOptions}
+              selected={field.value}
+              onChange={field.onChange}
+            />
+          ) : (
+            <div className="skeleton h-24 w-full"></div>
+          )
+        }
+      />
 
       {/* Multi-select dropdowns */}
       <Controller
@@ -167,7 +163,7 @@ function EarringForm({ initial = {}, onChange }) {
           )
         }
       />
-      
+
       <Controller
         control={control}
         name="stoneType"
@@ -267,8 +263,6 @@ function EarringForm({ initial = {}, onChange }) {
       ) : (
         <div className="skeleton h-12 w-full"></div>
       )}
-
-      
 
       <Controller
         control={control}

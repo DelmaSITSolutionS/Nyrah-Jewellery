@@ -7,11 +7,10 @@ exports.createInstaPost = catchAsyncErrors(async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: "No image uploaded" });
   }
-
+  
   const result = await uploadSingleImageToCloudinary(req.file, "insta-post");
-
   const instaPost = await InstaPost.create({
-    post: result.secure_url, // ✅ Only save the URL, not the whole object
+    post: result.url, // ✅ Only save the URL, not the whole object
     url: req.body.url,
   });
 
@@ -38,7 +37,8 @@ exports.updateInstaPost = catchAsyncErrors(async (req, res) => {
   }
 
   if (req.file) {
-    instaPost.post = await uploadSingleImageToCloudinary(req.file, "insta-post");
+    let result = await uploadSingleImageToCloudinary(req.file, "insta-post");
+    instaPost.post = result.url
   }
 
   if (req.body.url) {
