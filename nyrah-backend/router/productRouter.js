@@ -14,6 +14,7 @@ const {
   getTopRatedProducts,
   getLowStockProducts,
   getProductById,
+  getProductsByGroup,
 } = require("../controllers/productController");
 const { productMediaUpload } = require("../middleware/upload");
 const { isAuthenticatedUser, isAuthorizedRole } = require("../middleware/auth");
@@ -25,6 +26,7 @@ router.get("/products", getFirstProductsInGroups);
 router.get("/products/:mainCategory/:subCategory", getProductsBySubCategory);
 router.get("/products/:mainCategory", getProductsByMainCategory);
 router.get("/product/group/:id", getProductById);
+router.get("/product/varients/:productGroup", getProductsByGroup);
 router.post("/product/calculate-price", calculateFinalPriceForClient);
 router.get("/search", getSearchedProducts);
 router.get("/suggestions", getSearchSuggestions);

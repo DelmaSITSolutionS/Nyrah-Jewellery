@@ -9,6 +9,7 @@ import {
   deleteProduct,
   getProductsByMaterialTag,
   getProductsByMaterialSub,
+  getProductById,
 } from "../apis/productApi";
 
 const initialState = {
@@ -113,8 +114,13 @@ const productSlice = createSlice({
       })
 
       // Get Group Variants
-      .addCase(getProductGroupVariants.fulfilled, (state, action) => {
+      .addCase(getProductById.fulfilled, (state, action) => {
         state.product = action.payload.product;
+      })
+
+      // Get Group Variants
+      .addCase(getProductGroupVariants.fulfilled, (state, action) => {
+        state.groupVariants = action.payload;
       })
 
       // Update Product

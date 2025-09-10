@@ -73,7 +73,7 @@ export default function ProductCard({ product }) {
       <div className="p-3 space-y-1">
         <h2
           style={{ wordSpacing: "2px" }}
-          className="text-xs md:text-[1rem] uppercase font-cardo tracking-wider font-[400]   text-[#4A4A4A] text-center   line-clamp-1 my-2"
+          className="text-xs md:text-[1rem] uppercase font-cardo tracking-wider font-[400]   text-[#4A4A4A] text-center   line-clamp-3 my-2"
         >
           {name}
         </h2>

@@ -14,7 +14,7 @@ import { CiFileOn } from "react-icons/ci";
 
 import { getAllOptions } from "../../redux/apis/optionApi";
 import {
-  getProductGroupVariants,
+  getProductById,
   getProductsByMaterialTag,
 } from "../../redux/apis/productApi";
 import { addToCart, fetchCart } from "../../redux/apis/cartApi";
@@ -75,6 +75,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
     useSelector((s) => s.options)["metalTone"] || {};
   const { list: products } = useSelector((state) => state.product);
   const selectedCurrency = useSelector((state) => state.currency.selected);
+  
 
   const symbol = selectedCurrency?.currencies
     ? selectedCurrency?.currencies[Object.keys(selectedCurrency?.currencies)[0]]
@@ -88,11 +89,19 @@ function ProductDetail({ setCartOpen, setLogin }) {
   useEffect(() => {
     let isMounted = true;
     const convertPrice = async () => {
+      let converted;
       if (!finalPrice) {
         setProductPrice(0);
         return;
       }
-      const converted = await currencyConverter(selectedCurrency, finalPrice);
+      if (isCustomTab) {
+        converted = await currencyConverter(
+          selectedCurrency,
+          customizationPrice
+        );
+      } else {
+        converted = await currencyConverter(selectedCurrency, finalPrice);
+      }
       if (isMounted) setProductPrice(converted);
     };
     convertPrice();
@@ -111,7 +120,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
     dispatch(clearCustomizationData());
 
     const fetchProductAndSetDefaults = async () => {
-      const result = await dispatch(getProductGroupVariants({ id })).unwrap();
+      const result = await dispatch(getProductById({ id })).unwrap();
       if (result.product) {
         const fetchedProduct = result.product;
         setProduct(fetchedProduct);
@@ -122,6 +131,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
         );
 
         const initialCustomizations = {
+          costomization:isCustomTab?"yes":"no",
           metalTone: fetchedProduct.detailsRef?.metalTone?.[0] || null,
           metalPurity: {
             value: fetchedProduct.detailsRef?.metalPurity?.[0] || null,
@@ -276,11 +286,12 @@ function ProductDetail({ setCartOpen, setLogin }) {
     setIsCustomTab(isCustom);
     if (isCustom) {
       // When switching TO custom, clear the state
-      setCustomizations({});
+      setCustomizations({costomization:isCustom?"yes":"no"});
     } else {
       // When switching BACK to "Ready Available", re-apply the product's defaults
       if (product) {
         setCustomizations({
+          costomization:isCustomTab?"yes":"no",
           metalTone: product.detailsRef?.metalTone?.[0] || null,
           metalPurity: {
             value: product.detailsRef?.metalPurity?.[0] || null,
@@ -295,6 +306,8 @@ function ProductDetail({ setCartOpen, setLogin }) {
     }
   };
 
+  // console.log(product)
+
   const isVideo = (url) =>
     typeof url === "string" && (url.endsWith(".mp4") || url.includes("video"));
 
@@ -304,7 +317,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
     Boolean
   );
 
-  console.log(customizations);
+  // console.log(customizations);
 
   return (
     <div className="pt-[6rem] lg:pt-[9rem] pb-10 px-[1rem] sm:px-[3rem] ">
@@ -515,7 +528,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                   className="tab font-poppins text-[.75rem] [--tab-border-color:#cccccc] tracking-wide"
                   aria-label="Customization"
                   checked={isCustomTab}
-                  disabled={product.material?.tag !== "gold"}
+                  disabled={product.material?.tag !== "gold" }
                   onChange={() => handleTabChange(true)}
                 />
                 <div className="tab-content bg-base-100 border-[#cccccc] py-6 px-4">
@@ -534,14 +547,14 @@ function ProductDetail({ setCartOpen, setLogin }) {
                     />
                   )}
 
-                   {isCustomTab && product.category?.main === "earring" && (
+                  {isCustomTab && product.category?.main === "earring" && (
                     <CustomEarring
                       productGroup={product?.productGroup}
                       selectedCustomizations={customizations}
                       onChange={handleCustomizationChange}
                     />
                   )}
-                   {isCustomTab && product.category?.main === "necklace" && (
+                  {isCustomTab && product.category?.main === "necklace" && (
                     <CustomNecklace
                       productGroup={product?.productGroup}
                       selectedCustomizations={customizations}
@@ -577,7 +590,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                   <span className="px-4 font-poppins">{quantity}</span>
                   <button
                     className="px-3 py-1 cursor-pointer text-lg hover:bg-gray-100"
-                    disabled={quantity > product?.stock}
+                    disabled={quantity >= product?.stock}
                     onClick={() => setQuantity((prev) => prev + 1)}
                   >
                     +
@@ -588,7 +601,7 @@ function ProductDetail({ setCartOpen, setLogin }) {
                   onClick={() => handleAddToCart()}
                 >
                   <PiShoppingCartSimpleThin className="text-lg" />
-                  Add to cart
+                  {product?.stock===0?"Out of stock":"Add to cart"}
                   <div className="group z-[-1] absolute group-hover:top-0 transition-all duration-300 top-[100%] left-0 w-full h-full bg-black"></div>
                 </button>
               </div>
@@ -633,14 +646,14 @@ function ProductDetail({ setCartOpen, setLogin }) {
                   Description
                 </div>
                 <div className="px-0 collapse-content text-sm text-justify first-letter:capitalize">
-                  <pre className="text-sm font-cardo text-wrap">
+                  <pre className="text-[.95rem] font-cardo text-wrap">
                     {product?.shortDescription}
                   </pre>
                   {product?.detailsRef?.careInstructions && (
-                    <li className="pt-3">
-                      <strong>Care Instructions: </strong>
-                      {product?.detailsRef.careInstructions}
-                    </li>
+                    <div className="py-3 ">
+                      <strong className="text-[1.1rem] ">Care Instructions: </strong>
+                      <pre className="text-[.95rem] mt-3 font-cardo text-wrap">{product?.detailsRef.careInstructions}</pre>
+                    </div>
                   )}
                   {product?.detailsRef?.packaging && (
                     <li className="pt-3">
@@ -821,21 +834,46 @@ function ProductDetail({ setCartOpen, setLogin }) {
                   Shipping Policy
                 </div>
 
-                <div className="px-0 collapse-content text-sm text-justify first-letter:capitalize">
-                  <pre className="font-cardo text-wrap">
+                <div className="px-0 collapse-content text-justify first-letter:capitalize">
+                  <pre className="font-cardo text-[.95rem] text-wrap">
                     {product?.detailsRef.shippingNote}
                   </pre>
 
                   {product?.detailsRef.deliveryTime && (
-                    <li className="pt-3">
-                      <strong>Delivery Time : </strong>
+                    <div className="pt-3">
+                      <strong className="text-[1rem]">Delivery Time </strong>
 
-                      {product?.detailsRef.deliveryTime}
-                    </li>
+                      <pre className=" mt-3 text-[.95rem] font-cardo text-wrap">{product?.detailsRef.deliveryTime}</pre>
+                    </div>
                   )}
                 </div>
               </div>
             )}
+
+            <div className="collapse tracking-wider collapse-plus p-0 border-y-[1px]  bg-base-100 border-[#d6d6d6]  rounded-none">
+              <input type="checkbox" id="shippingInfo" />
+
+              <div className="px-0 collapse-title font-semibold ">
+                Refund & Return Policy
+              </div>
+
+              <div className="px-0 collapse-content text-justify first-letter:capitalize">
+                <ul className="list-disc pl-5 space-y-2 text-gray-600">
+                  <li className="text-justify">
+                    Returns are accepted within <strong>"30 days"</strong> of
+                    delivery.
+                  </li>
+                  <li>
+                    <strong>Customized orders</strong> are{" "}
+                    <strong>"non-refundable"</strong>.
+                  </li>
+                  <li>
+                    <strong>"Shipping and insurance fees"</strong> are not
+                    refundable.
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>

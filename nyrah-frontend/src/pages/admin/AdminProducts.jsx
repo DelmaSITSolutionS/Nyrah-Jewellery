@@ -67,6 +67,8 @@ function AdminProducts() {
   const resultsPerPage = 12;
   const totalPages = Math.ceil(totalCount / resultsPerPage);
 
+  console.log(groupVariants)
+
   useEffect(() => {
     if (category === "all") {
       dispatch(getGroupedProducts({ page: currentPage }));
@@ -323,7 +325,7 @@ function AdminProducts() {
                         groupVariants.variants.slice(1).map((v, vi) => (
                           <tr
                             key={v._id}
-                            className="bg-base-300 capitalize text-nowrap"
+                            className="bg-base-300 capitalize text-nowrap w-full"
                           >
                             <td>{`${
                               (currentPage - 1) * resultsPerPage + (idx + 1)
@@ -340,6 +342,7 @@ function AdminProducts() {
                               />
                             </td>
                             <td>{v.name}</td>
+                            <td>{v.stock}</td>
                             <td>{v.productGroup}</td>
                             <td>{v.category.main}</td>
                             <td>
@@ -368,8 +371,8 @@ function AdminProducts() {
                           </tr>
                         ))
                       ) : (
-                        <tr className="bg-base-300">
-                          <td colSpan="6" className="text-center py-4">
+                        <tr className="bg-base-300 w-full">
+                          <td colSpan="7" className="text-center w-full py-4">
                             No additional variants.
                           </td>
                         </tr>

@@ -105,15 +105,19 @@ export default function CheckoutSummary() {
     () => (charges?.gstRate ? subtotal * charges.gstRate : 0),
     [subtotal, charges]
   );
-
+  
   const shipping = useMemo(() => {
     if (!charges) return 0;
-    if (country === "India") return charges.domesticShipping ?? 0;
-    const line = charges.internationalShipping?.find(
-      (r) => r.country === country && r.courier === courier
-    );
-    return line?.charge ?? 0;
-  }, [country, courier, charges]);
+    console.log(country)
+    if (country !== "India") {
+      console.log(subtotal<=8002)
+      if (subtotal <= 8802) return charges.domesticShipping;
+    }
+    // const line = charges.internationalShipping?.find(
+    //   (r) => r.country === country && r.courier === courier
+    // );
+    return 0;
+  }, [country, courier, charges, subtotal]);
 
   const extraCharges = useMemo(() => {
     if (!charges) return 0;
@@ -162,16 +166,21 @@ export default function CheckoutSummary() {
           })
         );
 
-        const [sub, g, sh, ex, gt, e,h,sr] = await Promise.all([
+        const [sub, g, sh, ex, gt, e, h, sr] = await Promise.all([
           currencyConverter(selectedCurrency, subtotal),
           currencyConverter(selectedCurrency, gst),
           currencyConverter(selectedCurrency, shipping),
           currencyConverter(selectedCurrency, extraCharges),
           currencyConverter(selectedCurrency, grandTotal),
           currencyConverter(selectedCurrency, charges.otherCharges?.engraving),
-          currencyConverter(selectedCurrency, charges.otherCharges?.hallmarking),
-          currencyConverter(selectedCurrency, charges.otherCharges?.specialRequestDefault)
-
+          currencyConverter(
+            selectedCurrency,
+            charges.otherCharges?.hallmarking
+          ),
+          currencyConverter(
+            selectedCurrency,
+            charges.otherCharges?.specialRequestDefault
+          ),
         ]);
         if (active) {
           setConverted({
@@ -183,7 +192,7 @@ export default function CheckoutSummary() {
             items: itemConversions,
             engraving: e,
             hallmarking: h,
-            specialR: sr
+            specialR: sr,
           });
         }
       } catch (err) {
@@ -201,7 +210,7 @@ export default function CheckoutSummary() {
     gst,
     shipping,
     extraCharges,
-    grandTotal
+    grandTotal,
   ]);
 
   if (chargesLoading || !charges) return <CheckoutSkeleton />;
@@ -267,7 +276,7 @@ export default function CheckoutSummary() {
 
         <AddressSection />
 
-        {charges.internationalShipping.length > 0 && (
+        {/* {charges.internationalShipping.length > 0 && (
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <select
               className="select select-bordered w-full"
@@ -300,11 +309,11 @@ export default function CheckoutSummary() {
               </select>
             )}
           </section>
-        )}
+        )} */}
       </div>
 
       {/* right summary */}
-      <div className="space-y-2 lg:w-[30%] max-h-[70vh] bg-base-200 p-3 flex flex-col justify-end">
+      <div className="space-y-2 lg:w-[30%] h-full bg-base-200 p-3 flex flex-col justify-end">
         <section className="space-y-3 font-cardo text-sm uppercase tracking-wider">
           {hasEngraving && (
             <p className="text-sm">
@@ -442,6 +451,43 @@ export default function CheckoutSummary() {
             checkout.
           </p>
         )}
+
+        <section>
+          <div className="my-3">
+            <h2 className="font-bold mb-3">Shipping Policy</h2>
+            <ul className="list-disc pl-5 space-y-2 text-gray-600">
+              <li className="text-justify">
+                We offer <strong>"worldwide shipping"</strong> with convenient{" "}
+                <strong>"doorstep delivery"</strong>.
+              </li>
+              <li>
+                Shipping charges range from <strong>"$60 to $80"</strong>,
+                depending on location.
+              </li>
+              <li>
+                Orders are delivered within{" "}
+                <strong>*15–20 business days*</strong>.
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h2 className="font-bold mb-3">Refund & Return Policy</h2>
+            <ul className="list-disc pl-5 space-y-2 text-gray-600">
+              <li className="text-justify">
+                Returns are accepted within <strong>"30 days"</strong> of
+                delivery.
+              </li>
+              <li>
+                <strong>Customized orders</strong> are{" "}
+                <strong>"non-refundable"</strong>.
+              </li>
+              <li>
+                <strong>"Shipping and insurance fees"</strong> are not
+                refundable.
+              </li>
+            </ul>
+          </div>
+        </section>
       </div>
     </div>
   );

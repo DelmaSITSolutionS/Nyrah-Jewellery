@@ -162,8 +162,8 @@ export const getProductsByMaterialSub = createAsyncThunk(
 // ───────────────────────────────────────────────────────────────────────────────
 // 🔄 GET VARIANTS of a PRODUCT GROUP with optional filters (rarely needed)
 // ───────────────────────────────────────────────────────────────────────────────
-export const getProductGroupVariants = createAsyncThunk(
-  "product/getGroupVariants",
+export const getProductById = createAsyncThunk(
+  "product/getProductById",
   async ({ id, ...params }, thunkAPI) => {
     try {
       const { data } = await API.get(`/product/group/${id}`, {
@@ -178,6 +178,28 @@ export const getProductGroupVariants = createAsyncThunk(
     }
   }
 );
+
+// ───────────────────────────────────────────────────────────────────────────────
+// 🔄 GET VARIANTS of a PRODUCT GROUP with optional filters (rarely needed)
+// ───────────────────────────────────────────────────────────────────────────────
+export const getProductGroupVariants = createAsyncThunk(
+  "product/getGroupVariants",
+  async ({ groupId, ...params }, thunkAPI) => {
+    try {
+      const { data } = await API.get(`/product/varients/${groupId}`, {
+        params: buildQuery(params),
+      });
+
+      return { groupId, variants: data.variants };
+    } catch (err) {
+      return thunkAPI.rejectWithValue(
+        err.response?.data?.message || err.message
+      );
+    }
+  }
+);
+
+
 
 // ───────────────────────────────────────────────────────────────────────────────
 // ✏️ UPDATE PRODUCT (unchanged)

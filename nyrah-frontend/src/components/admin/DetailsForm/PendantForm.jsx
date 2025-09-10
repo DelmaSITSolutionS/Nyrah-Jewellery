@@ -374,10 +374,10 @@ function PendantForm({ initial = {}, onChange }) {
         <label htmlFor="deliveryTime" className="label">
           Delivery Time
         </label>
-        <input
+        <textarea
           id="deliveryTime"
           {...register("deliveryTime")}
-          className="input input-bordered w-full"
+          className="textarea textarea-bordered w-full"
         />
       </div>
 

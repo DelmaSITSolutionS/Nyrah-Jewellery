@@ -254,6 +254,28 @@ const getProductById = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+const getProductsByGroup = catchAsyncErrors(async (req, res, next) => {
+  const { productGroup } = req.params;
+
+  const products = await Product.find({ productGroup })
+    .sort({ createdAt: 1 })
+    .populate("detailsRef");
+
+  if (!products || products.length === 0) {
+    return res.status(404).json({
+      success: false,
+      message: "No products found for this group",
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    count: products.length,
+    group: productGroup,
+    variants: products,
+  });
+});
+
 const updateProductVariant = catchAsyncErrors(async (req, res, next) => {
   const { id } = req.params;
 
@@ -577,6 +599,7 @@ module.exports = {
   getProductsByMainCategory,
   getProductsBySubCategory,
   getProductById,
+  getProductsByGroup,
   updateProductVariant,
   deleteProductVariant,
   calculateFinalPriceForClient,

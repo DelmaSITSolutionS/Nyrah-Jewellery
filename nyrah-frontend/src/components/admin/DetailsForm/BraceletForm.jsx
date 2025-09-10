@@ -290,10 +290,10 @@ function BraceletForm({ initial = {}, onChange }) {
         <label htmlFor="deliveryTime" className="label">
           Delivery Time
         </label>
-        <input
+        <textarea
           id="deliveryTime"
           {...register("deliveryTime")}
-          className="input input-bordered w-full"
+          className="textarea textarea-bordered input-bordered w-full"
         />
       </div>
     </div>
